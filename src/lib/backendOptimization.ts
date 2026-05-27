@@ -7,7 +7,7 @@ import type { EnrichedOptimizeResult } from './scoreData';
 import { enrichOptimizationResult } from './scoreData';
 import { enforceResumeStructure } from './enforceResumeStructure';
 
-const BACKEND_URL = 'http://localhost:8787';
+const BACKEND_URL = '';
 
 export interface OptimizeResponse {
   success: boolean;
