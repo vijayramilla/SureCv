@@ -1,23 +1,4 @@
-import {
-  analyzeResume as analyzeResumeNvidiaViaLegacy,
-  type AnalysisResult,
-} from './nvidia-nim'
-import {
-  optimizeResume as optimizeResumeGroq,
-  generateCoverLetter as generateCoverLetterGroq,
-  type ATSOptimizationResult,
-  type EnrichedOptimizeResult,
-} from './groq'
-import {
-  optimizeResumeWithGemini,
-  generateCoverLetterWithGemini,
-} from './gemini'
-import {
-  isRetryableApiError,
-  isUserInputValidationError,
-  mergeProviderErrors,
-  parseApiError,
-} from './apiErrors'
+import type { EnrichedOptimizeResult } from './scoreData'
 
 /**
  * Convert nvidia-nim AnalysisResult to EnrichedOptimizeResult format
@@ -70,47 +51,69 @@ export async function optimizeResume(
   resume: string,
   jobDescription: string
 ): Promise<EnrichedOptimizeResult> {
-  const errors: unknown[] = []
+  // All optimization now happens server-side through backend
+  // Frontend only calls /.netlify/functions/optimize-resume
+  // Backend handles NVIDIA → Groq → Gemini fallback internally
 
-  // Try NVIDIA NIM first (primary)
   try {
-    console.info('[Optimize] Attempting NVIDIA NIM (LLaMA 3.3-70B)...')
-    const analysisResult = await analyzeResumeNvidiaViaLegacy(resume, jobDescription)
-    const enrichedResult = convertAnalysisResultToEnriched(analysisResult)
-    console.info('[Optimize] NVIDIA NIM succeeded')
-    return enrichedResult
-  } catch (nvidiaError) {
-    errors.push(nvidiaError)
-    console.warn(
-      '[Optimize] NVIDIA NIM failed, trying Groq:',
-      parseApiError(nvidiaError).code
-    )
-  }
+    console.info('[Optimize] Calling backend optimization service...')
+    
+    const response = await fetch('/.netlify/functions/optimize-resume', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        resumeText: resume.trim(),
+        jobDescription: jobDescription.trim(),
+      })
+    })
 
-  // Fallback to Groq
-  try {
-    console.info('[Optimize] Attempting Groq fallback...')
-    return await optimizeResumeGroq(resume, jobDescription)
-  } catch (groqError) {
-    errors.push(groqError)
-
-    if (isUserInputValidationError(groqError) || !isRetryableApiError(groqError)) {
-      throw groqError
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = (errorData as any)?.error || `Server error: ${response.status}`
+      throw new Error(errorMessage)
     }
 
-    console.warn(
-      '[Optimize] Groq failed, trying Gemini:',
-      parseApiError(groqError).code
-    )
+    const backendResult = await response.json()
 
-    try {
-      const result = await optimizeResumeWithGemini(resume, jobDescription)
-      console.info('[Optimize] Gemini fallback succeeded')
-      return result
-    } catch (geminiError) {
-      errors.push(geminiError)
-      throw new Error(mergeProviderErrors(errors).userMessage)
+    console.info('[Optimize] Backend optimization succeeded')
+
+    // Convert backend response to EnrichedOptimizeResult format
+    return {
+      rewrittenResume: backendResult.rewrittenResume,
+      keywords_added: backendResult.addedKeywords || [],
+      keywords_missing: backendResult.missingKeywords || [],
+      ats_score: backendResult.atsAfter || backendResult.score,
+      ats_compatibility: {
+        taleo: backendResult.scoreDimensions?.keywordMatch || 0,
+        workday: backendResult.scoreDimensions?.formatScore || 0,
+        greenhouse: backendResult.scoreDimensions?.actionVerbScore || 0,
+        lever: backendResult.scoreDimensions?.quantifiedBullets || 0,
+        icims: backendResult.scoreDimensions?.sectionCompleteness || 0,
+      },
+      power_verbs_used: backendResult.weakVerbsReplaced?.map((v: any) => v.replacement) || [],
+      metrics_added: backendResult.metricsAdded || 0,
+      candidate_name: '',
+      target_role: 'Position',
+      target_company: 'Company',
+      original_score: backendResult.atsBefore || 0,
+      optimized_score: backendResult.atsAfter || backendResult.score || 0,
+      score_lift: (backendResult.atsAfter || backendResult.score || 0) - (backendResult.atsBefore || 0),
+      score_dimensions: backendResult.scoreDimensions || {},
+      recruiter_tips: backendResult.recruiterTips || [],
+      industry_detected: backendResult.industryDetected || 'general',
+      scoreDisplay: {
+        before: backendResult.atsBefore || 0,
+        after: backendResult.atsAfter || backendResult.score || 0,
+        improvement: (backendResult.atsAfter || backendResult.score || 0) - (backendResult.atsBefore || 0),
+      },
     }
+  } catch (error) {
+    console.error('[Optimize] Backend call failed:', error)
+    throw new Error(
+      (error as Error)?.message || 'Optimization service temporarily unavailable. Please try again.'
+    )
   }
 }
 
@@ -119,44 +122,53 @@ export async function generateCoverLetter(
   jobDescription: string,
   _candidateName?: string
 ): Promise<string> {
-  const errors: unknown[] = []
-
-  // Try backend NVIDIA first
+  // All cover letter generation now happens server-side through backend
+  // Frontend calls /.netlify/functions/optimize-resume which returns coverLetterPoints
+  
   try {
-    console.info('[Cover letter] Attempting Backend NVIDIA...')
-    return await generateCoverLetterNvidia(resume, jobDescription)
-  } catch (backendError) {
-    errors.push(backendError)
-    console.warn(
-      '[Cover letter] Backend failed, trying Groq:',
-      parseApiError(backendError).code
-    )
-  }
+    console.info('[Cover letter] Calling backend optimization service for cover letter generation...')
+    
+    const response = await fetch('/.netlify/functions/optimize-resume', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        resumeText: resume.trim(),
+        jobDescription: jobDescription.trim(),
+      })
+    })
 
-  // Try Groq
-  try {
-    return await generateCoverLetterGroq(resume, jobDescription)
-  } catch (groqError) {
-    errors.push(groqError)
-
-    if (!isRetryableApiError(groqError)) {
-      throw groqError
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = (errorData as any)?.error || `Server error: ${response.status}`
+      throw new Error(errorMessage)
     }
 
-    console.warn(
-      '[Cover letter] Groq failed, trying Gemini:',
-      parseApiError(groqError).code
-    )
+    const backendResult = await response.json()
+    const coverLetterPoints = backendResult.coverLetterPoints || []
 
-    try {
-      return await generateCoverLetterWithGemini(resume, jobDescription, _candidateName)
-    } catch (geminiError) {
-      errors.push(geminiError)
-      const merged = mergeProviderErrors(errors)
-      throw new Error(
-        merged.userMessage.replace('Resume optimization', 'Cover letter generation')
-      )
+    if (!Array.isArray(coverLetterPoints) || coverLetterPoints.length === 0) {
+      throw new Error('No cover letter points generated')
     }
+
+    // Convert cover letter points to formatted text
+    const coverLetterText = [
+      'Dear Hiring Manager,',
+      '',
+      ...coverLetterPoints,
+      '',
+      'Sincerely,',
+      _candidateName || 'Candidate'
+    ].join('\n')
+
+    console.info('[Cover letter] Backend cover letter generation succeeded')
+    return coverLetterText
+  } catch (error) {
+    console.error('[Cover letter] Backend call failed:', error)
+    throw new Error(
+      (error as Error)?.message || 'Cover letter generation temporarily unavailable. Please try again.'
+    )
   }
 }
 
