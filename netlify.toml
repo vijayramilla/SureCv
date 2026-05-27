@@ -1,0 +1,46 @@
+# Netlify Configuration for SureCv
+# Ensures Netlify Functions and proper deployment
+
+[build]
+  command = "npm run build"
+  functions = "netlify/functions"
+  publish = "dist"
+
+# Environment variables (set these on Netlify Dashboard)
+[build.environment]
+  # Backend-only secrets (NEVER expose to frontend)
+  # NVIDIA_API_KEY = set on Netlify Dashboard
+  # GROQ_API_KEY = set on Netlify Dashboard
+  # These are used by netlify/functions/optimize.js
+
+# Redirect all API calls to Netlify Functions
+[[redirects]]
+  from = "/.netlify/functions/:name"
+  to = "/.netlify/functions/:name"
+  status = 200
+
+# Redirect SPA routes to index.html for React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Cache headers for optimal performance
+[[headers]]
+  for = "/dist/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/dist/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# CORS headers for API responses
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Content-Type = "application/json"
