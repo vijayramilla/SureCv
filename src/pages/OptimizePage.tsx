@@ -222,6 +222,31 @@ export default function OptimizePage() {
         jobDesc
       )
 
+      // Update normalizedResult with REAL ATS scores from server engine
+      // This ensures accurate score calculation instead of NVIDIA estimates
+      const finalResult: EnrichedOptimizeResult = {
+        ...normalizedResult,
+        original_score: fullAts.overall_before,
+        optimized_score: fullAts.overall_after,
+        score_lift: fullAts.overall_after - fullAts.overall_before,
+        atsBefore: fullAts.overall_before,
+        atsAfter: fullAts.overall_after,
+        // Use real dimension scores from ATS engine
+        scoreDimensions: {
+          keywordMatch: fullAts.dimensions.keyword_match.score,
+          formatScore: fullAts.dimensions.format_parsability.score,
+          actionVerbScore: fullAts.dimensions.experience_relevance.score,
+          quantifiedBullets: fullAts.dimensions.skills_coverage.score,
+          sectionCompleteness: fullAts.dimensions.title_alignment.score,
+        },
+        // Update keywords and tips from real ATS analysis
+        missingKeywords: fullAts.keywords_missing,
+        addedKeywords: fullAts.keywords_matched,
+        keywords_missing: fullAts.keywords_missing,
+        keywords_added: fullAts.keywords_matched,
+        recruiterTips: fullAts.tips,
+      }
+
       clearInterval(progressInterval)
       setProgress(100)
       setProgressMsg('Finalizing')
@@ -241,13 +266,13 @@ export default function OptimizePage() {
           candidateName: result.candidate_name || '',
           targetRole: result.target_role || 'Position',
           targetCompany: result.target_company || 'Company',
-          originalScore: result.original_score || 0,
-          optimizedScore: result.optimized_score || 0,
-          scoreLift: result.score_lift || 0,
+          originalScore: fullAts.overall_before,
+          optimizedScore: fullAts.overall_after,
+          scoreLift: fullAts.overall_after - fullAts.overall_before,
           originalResume: resume,
           optimizedResume: normalizedResult.rewrittenResume,
-          keywordsAdded: result.keywords_added || [],
-          keywordsMissing: result.keywords_missing || [],
+          keywordsAdded: fullAts.keywords_matched,
+          keywordsMissing: fullAts.keywords_missing,
           jobDescription: jobDesc,
         })
       }
@@ -263,7 +288,14 @@ export default function OptimizePage() {
       console.log('WEAK VERBS REPLACED:', result.weakVerbsReplaced)
       console.log('ADDED KEYWORDS:', result.addedKeywords)
 
-      setOptimizedResult(normalizedResult)
+      // DEBUG: Show real ATS improvement from server engine
+      console.log('=== REAL ATS SCORES (Server Engine) ===')
+      console.log('ORIGINAL ATS SCORE:', fullAts.overall_before)
+      console.log('OPTIMIZED ATS SCORE:', fullAts.overall_after)
+      console.log('ACTUAL IMPROVEMENT:', fullAts.overall_after - fullAts.overall_before, 'points')
+      console.log('DIMENSION BREAKDOWN:', fullAts.dimensions)
+
+      setOptimizedResult(finalResult)
       setAtsData(fullAts)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {

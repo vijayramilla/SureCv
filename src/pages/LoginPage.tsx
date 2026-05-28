@@ -157,7 +157,7 @@ export default function LoginPage() {
           <div className="bg-purple-600/10 border border-purple-500/25 rounded-lg p-4 mb-8">
             <p className="text-sm text-white font-medium mb-2">🎁 Start Free</p>
             <p className="text-xs text-[#94a3b8]">
-              2 free resume optimizations every month. No credit card required. Cancel anytime.
+              2 free resume optimizations every month. No credit card required. No refund.
             </p>
           </div>
 

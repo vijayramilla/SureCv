@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Footer from './components/Footer'
 import DashboardLayout from './pages/DashboardLayout'
 import OptimizePage from './pages/OptimizePage'
 import ResumeBuilderPage from './pages/ResumeBuilderPage'
@@ -14,6 +15,9 @@ import BillingPage from './pages/BillingPage'
 import SettingsPage from './pages/SettingsPage'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import ContactPage from './pages/ContactPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsPage from './pages/TermsPage'
 
 export default function App() {
   return (
@@ -27,6 +31,11 @@ export default function App() {
             {/* Auth routes */}
             <Route path="/auth/login" element={<LoginPage />} />
             <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+
+            {/* Public pages */}
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
 
             {/* Protected dashboard routes */}
             <Route
@@ -143,6 +152,7 @@ export default function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <Footer />
         </BrowserRouter>
       </ToastProvider>
     </AuthProvider>

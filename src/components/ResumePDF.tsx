@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
     color: '#111111',
     backgroundColor: '#FFFFFF',
     paddingTop: 40,
-    paddingBottom: 36,
+    paddingBottom: 50,
     paddingLeft: 45,
     paddingRight: 45,
     lineHeight: 1.4,
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   contact: {
     fontFamily: 'Helvetica',
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     color: '#000000',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.8,
     marginRight: 8,
   },
   sectionRule: {
@@ -189,6 +189,23 @@ const styles = StyleSheet.create({
     color: '#555555',
     flexShrink: 0,
   },
+  // FOOTER
+  footer: {
+    position: 'absolute',
+    bottom: 18,
+    left: 45,
+    right: 45,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 0.5,
+    borderTopColor: '#cccccc',
+    paddingTop: 4,
+  },
+  footerText: {
+    fontFamily: 'Helvetica',
+    fontSize: 7,
+    color: '#aaaaaa',
+  },
 })
 
 // ─── SECTION HEADER COMPONENT ────────────────────────
@@ -220,7 +237,35 @@ function BulletLine({ text }: { text: string }) {
 }
 
 // ─── MAIN PARSER ─────────────────────────────────────
-function parseResume(rawText: string) {
+interface ResumeData {
+  name: string
+  contact: string
+  summary: string
+  experience: Array<{
+    title: string
+    company: string
+    date: string
+    location: string
+    bullets: string[]
+  }>
+  skills: Array<{
+    category: string
+    items: string[]
+  }>
+  education: Array<{
+    degree: string
+    institution: string
+    year: string
+    grade: string
+  }>
+  certifications: Array<{
+    name: string
+    issuer: string
+    year: string
+  }>
+}
+
+function parseResume(rawText: string): ResumeData {
   // Split by actual newlines
   const lines = rawText
     .split('\n')
@@ -230,7 +275,7 @@ function parseResume(rawText: string) {
   console.log('TOTAL LINES:', lines.length)
   console.log('FIRST 5 LINES:', lines.slice(0, 5))
 
-  const out = {
+  const out: ResumeData = {
     name: '',
     contact: '',
     summary: '',
@@ -300,7 +345,6 @@ function parseResume(rawText: string) {
   let section: string | null = null
   let currentJob: any = null
   let summaryLines: string[] = []
-  let headerDone = false
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
@@ -329,10 +373,8 @@ function parseResume(rawText: string) {
       if (isContact(line) && !out.contact) {
         out.contact = line.replace(/[*_#]/g, '').trim()
         console.log('CONTACT:', out.contact)
-        headerDone = true
         continue
       }
-      // Skip job title line in header (e.g. "Software Engineer")
       continue
     }
 
@@ -368,7 +410,6 @@ function parseResume(rawText: string) {
         let title = '', company = '', date = '', location = ''
 
         if (hasDash && hasPipe) {
-          // "Job Title — Company | Date"
           const dashParts = line.split(/[—–]/)
           title = dashParts[0].trim()
           const rest = dashParts[1] || ''
@@ -393,7 +434,6 @@ function parseResume(rawText: string) {
         continue
       }
 
-      // Location or additional company info
       if (currentJob) {
         if (!currentJob.company && line.length < 60) {
           currentJob.company = line
@@ -476,18 +516,6 @@ function parseResume(rawText: string) {
     // ── CERTIFICATIONS ──
     if (section === 'certifications') {
       const c = line.replace(/^[•\-·*]\s*/, '').trim()
-      
-      // SKIP if certification is None/NA/Not applicable
-      if (
-        c.toLowerCase() === 'none' ||
-        c.toLowerCase() === 'n/a' ||
-        c.toLowerCase() === 'not applicable' ||
-        c.toLowerCase() === 'no certifications' ||
-        c.length < 3
-      ) {
-        continue  // skip this line
-      }
-      
       if (c.includes('—') || c.includes('–') || c.includes('|')) {
         const p = c.split(/[—–|]/)
         out.certifications.push({
@@ -502,7 +530,6 @@ function parseResume(rawText: string) {
     }
   }
 
-  // Save last open job
   if (currentJob && section === 'experience') {
     out.experience.push(currentJob)
   }
@@ -512,7 +539,7 @@ function parseResume(rawText: string) {
 }
 
 // ─── PDF DOCUMENT ────────────────────────────────────
-export function ResumeDocument({ resumeText, resumeData }: { resumeText?: string; resumeData?: any }) {
+export function ResumeDocument({ resumeText, resumeData }: { resumeText?: string; resumeData?: ResumeData }) {
   const d = resumeData || parseResume(resumeText || '')
 
   return (
@@ -609,7 +636,7 @@ export function ResumeDocument({ resumeText, resumeData }: { resumeText?: string
         ) : null}
 
         {/* ══ CERTIFICATIONS ══ */}
-        {d.certifications && d.certifications.length > 0 && d.certifications[0].name.toLowerCase() !== 'none' ? (
+        {d.certifications && d.certifications.length > 0 ? (
           <View style={styles.sectionWrap}>
             <SectionHeader title="Certifications" />
             {d.certifications.map((c: any, i: number) => (
@@ -626,6 +653,21 @@ export function ResumeDocument({ resumeText, resumeData }: { resumeText?: string
           </View>
         ) : null}
 
+        {/* ══ FOOTER ══ */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>
+            Generated by SureCv.ai
+          </Text>
+          <Text
+            style={styles.footerText}
+            render={({ pageNumber, totalPages }: any) =>
+              totalPages > 1
+                ? `Page ${pageNumber} of ${totalPages}`
+                : ''
+            }
+          />
+        </View>
+
       </Page>
     </Document>
   )
@@ -638,7 +680,7 @@ export function DownloadResumeButton({
   candidateName,
 }: {
   resumeText?: string
-  resumeData?: any
+  resumeData?: ResumeData
   candidateName?: string
 }) {
   const firstName = (

@@ -10,7 +10,14 @@ declare global {
   }
 }
 
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
+// Live Razorpay Keys - from environment variables only
+// Frontend: Only the public key (VITE_) is used for client-side payments
+const RAZORPAY_KEY = (import.meta.env.VITE_RAZORPAY_KEY_ID as string);
+
+// Validate Razorpay configuration - only check public key on frontend
+if (!RAZORPAY_KEY) {
+  console.warn('Razorpay public key not configured. Payments will not work.');
+}
 
 // Load Razorpay SDK
 export function loadRazorpayScript(): Promise<boolean> {
@@ -90,6 +97,11 @@ export async function initiatePayment(options: PaymentOptions): Promise<void> {
         console.log('Payment cancelled')
       },
     },
+    retry: {
+      enabled: true,
+      max_count: 3,
+    },
+    timeout: 600,
     theme: {
       color: '#7c3aed',
     },

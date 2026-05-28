@@ -1,6 +1,8 @@
-// ─── FRONTEND CALLS BACKEND (NETLIFY FUNCTIONS) ─────
-// All NVIDIA API calls now happen securely on the backend
-// Frontend never calls NVIDIA directly or exposes the API key
+// ─── GROQ/GEMINI API CALLS ─────
+// Use Groq and Gemini directly from frontend
+
+import { optimizeResume as optimizeResumeWithGroq } from './groq'
+import { optimizeResumeWithGemini } from './gemini'
 
 export interface AnalysisResult {
   score: number;
@@ -19,42 +21,6 @@ export interface AnalysisResult {
   coverLetterPoints?: string[];
 }
 
-// ─── CALL BACKEND FUNCTION ───────────────────────────
-async function callOptimizeBackend(
-  resumeText: string,
-  jobDescription: string,
-  userInstructions: string = '',
-  resumeLength: string = 'auto'
-): Promise<AnalysisResult> {
-  const backendUrl = '/.netlify/functions/optimize'
-
-  console.log('[Frontend] Calling backend for optimization...')
-
-  const response = await fetch(backendUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      resumeText,
-      jobDescription,
-      userInstructions,
-      resumeLength
-    })
-  })
-
-  if (!response.ok) {
-    const err = await response.text()
-    console.error('[Frontend] Backend error:', err)
-    throw new Error(`Backend error ${response.status}: ${err}`)
-  }
-
-  const result = await response.json()
-  console.log('[Frontend] Backend response received')
-
-  return result
-}
-
 // ─── MAIN ANALYZE FUNCTION ───────────────────────────
 export async function analyzeResume(
   resumeText: string,
@@ -62,7 +28,20 @@ export async function analyzeResume(
   userInstructions: string = '',
   resumeLength: string = 'auto'
 ): Promise<AnalysisResult> {
-  return await callOptimizeBackend(resumeText, jobDescription, userInstructions, resumeLength)
+  try {
+    console.log('[Frontend] Optimizing with Groq...')
+    const result = await optimizeResumeWithGroq(resumeText, jobDescription)
+    return result as any as AnalysisResult
+  } catch (error) {
+    console.error('[Frontend] Groq failed, trying Gemini:', error)
+    try {
+      const result = await optimizeResumeWithGemini(resumeText, jobDescription)
+      return result as any as AnalysisResult
+    } catch (geminiError) {
+      console.error('[Frontend] Gemini also failed:', geminiError)
+      throw new Error('Resume optimization failed. Please try again.')
+    }
+  }
 }
 
 // ─── STUB FUNCTIONS FOR COMPATIBILITY ─────────────────

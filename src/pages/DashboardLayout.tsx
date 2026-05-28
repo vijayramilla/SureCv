@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { usePlanFeatures } from '../hooks/usePlanFeatures'
-import { calculateDaysUntilReset, calculateUsagePercentage } from '../lib/userUtils'
+import { calculateDaysUntilReset, calculateDaysUntilExpiry, calculateUsagePercentage } from '../lib/userUtils'
 
 const allNavItems = [
   { path: '/optimize', label: 'Optimize', feature: 'always' },
@@ -64,7 +64,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )
     : 0
 
-  const daysLeft = userProfile ? calculateDaysUntilReset(userProfile.nextResetDate) : 0
+  // Calculate days left based on plan type
+  const daysLeft = userProfile 
+    ? (userProfile.plan === 'power' 
+        ? calculateDaysUntilExpiry(userProfile.planExpiresAt)
+        : calculateDaysUntilReset(userProfile.nextResetDate))
+    : 0
 
   // Determine display based on plan
   const getUsageDisplay = () => {
@@ -81,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } else if (userProfile.plan === 'starter') {
       // Show resume usage for starter plan
       return {
-        text: 'Unlimited resumes',
+        text: '5 resumes',
         type: 'green',
       }
     } else {
@@ -165,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Usage pill */}
             <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium ${getUsageColor()}`}>
               <span>{usage.text}</span>
-              {userProfile?.plan !== 'free' && userProfile?.plan !== 'starter' && (
+              {userProfile?.plan === 'starter' && (
                 <>
                   <span className="text-[#475569]">·</span>
                   <span>{daysLeft}d left</span>

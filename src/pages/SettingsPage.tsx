@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { AlertCircle, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
-import { calculateDaysUntilReset, calculateUsagePercentage } from '../lib/userUtils'
+import { calculateDaysUntilReset, calculateDaysUntilExpiry, calculateUsagePercentage } from '../lib/userUtils'
 
 export default function SettingsPage() {
   const { user, userProfile } = useAuth()
@@ -23,7 +23,9 @@ export default function SettingsPage() {
     )
   }
 
-  const daysUntilReset = calculateDaysUntilReset(userProfile.nextResetDate)
+  const daysUntilReset = userProfile.plan === 'power' 
+    ? calculateDaysUntilExpiry(userProfile.planExpiresAt)
+    : calculateDaysUntilReset(userProfile.nextResetDate)
   const usagePercentage = calculateUsagePercentage(
     userProfile.optimizationsUsed,
     userProfile.optimizationsUsed + userProfile.optimizationsLeft
@@ -124,7 +126,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-[#94a3b8]">Reset Date</span>
+            <span className="text-[#94a3b8]">{userProfile.plan === 'power' ? 'Plan Expiry Date' : 'Reset Date'}</span>
             <span className="text-white font-semibold">{daysUntilReset} days</span>
           </div>
 

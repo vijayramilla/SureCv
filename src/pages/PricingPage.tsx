@@ -187,7 +187,7 @@ export default function PricingPage() {
           </div>
           <div className="flex items-center gap-2 text-[#64748b] text-sm">
             <Clock size={16} className="text-blue-400" />
-            <span>Cancel anytime</span>
+            <span>No refund</span>
           </div>
           <div className="flex items-center gap-2 text-[#64748b] text-sm">
             <Check size={16} className="text-brand-purple" />
@@ -305,7 +305,7 @@ export default function PricingPage() {
             <tbody>
               {[
                 { feature: 'Resume optimizations', free: '2 total', starter: `${PLAN_OPTIMIZATION_LIMITS.starter} total`, power: 'Unlimited' },
-                { feature: 'Resumes to create', free: '2', starter: 'Unlimited', power: 'Unlimited' },
+                { feature: 'Resumes to create', free: '2', starter: '5', power: 'Unlimited' },
                 { feature: 'ATS score analysis', free: true, starter: true, power: true },
                 { feature: 'Keyword gap detection', free: true, starter: true, power: true },
                 { feature: 'Bullet point rewrites', free: 'Basic', starter: 'Advanced', power: 'Advanced' },

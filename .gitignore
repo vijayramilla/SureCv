@@ -36,6 +36,3 @@ build/
 
 # OS files
 Thumbs.db
-
-# Netlify
-.netlify/

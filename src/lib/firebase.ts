@@ -9,13 +9,13 @@ import {
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCRR5Xt8U-9dVxqsc_z0G_YjTtUk3e8VdU",
-  authDomain: "surecv-24fe0.firebaseapp.com", // Use Firebase-hosted domain for auth
-  projectId: "surecv-24fe0",
-  storageBucket: "surecv-24fe0.firebasestorage.app",
-  messagingSenderId: "602291926106",
-  appId: "1:602291926106:web:63537efdb061eb23955463",
-  measurementId: "G-LE546SQ8TP",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
 }
 
 export const isFirebaseConfigured = Boolean(

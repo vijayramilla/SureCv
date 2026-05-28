@@ -1,3 +1,3 @@
 # SureCv
 
-[![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-fr1wy4te)
+AI-powered resume builder that increases your ATS score and gets you hired.

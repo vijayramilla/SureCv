@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
@@ -16,19 +17,19 @@ export default function Footer() {
           </div>
 
           <nav className="flex flex-wrap justify-center gap-6">
-            {['Privacy', 'Terms', 'Contact'].map((link) => (
-              <a
-                key={link}
-                href="#"
-                className="text-[#475569] hover:text-[#94a3b8] text-sm transition-colors duration-200"
-              >
-                {link}
-              </a>
-            ))}
+            <Link to="/privacy" className="text-[#94a3b8] hover:text-white text-sm transition-colors duration-200 font-medium">
+              Privacy
+            </Link>
+            <Link to="/terms" className="text-[#94a3b8] hover:text-white text-sm transition-colors duration-200 font-medium">
+              Terms
+            </Link>
+            <Link to="/contact" className="text-[#94a3b8] hover:text-white text-sm transition-colors duration-200 font-medium">
+              Contact
+            </Link>
           </nav>
 
-          <p className="text-[#475569] text-xs text-center sm:text-right">
-            &copy; 2025 SureCv. All rights reserved.
+          <p className="text-[#64748b] text-sm text-center sm:text-right">
+            &copy; 2026 SureCv. All rights reserved.
           </p>
         </div>
       </div>

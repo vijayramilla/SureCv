@@ -189,7 +189,12 @@ app.post('/api/optimize-resume', async (req, res) => {
     }
 
     // Call NVIDIA API
-    const nvidiaApiKey = process.env.NVIDIA_API_KEY || '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'
+    const nvidiaApiKey = process.env.NVIDIA_API_KEY;
+    if (!nvidiaApiKey) {
+      return res.status(500).json({
+        error: 'NVIDIA_API_KEY not configured on server'
+      })
+    }
     const nvidiaResponse = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {

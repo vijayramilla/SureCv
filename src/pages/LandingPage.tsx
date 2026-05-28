@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Zap, ShieldCheck, Target, Tag, PenLine, FileDown, Star, ArrowRight, Gift, Shield, Menu, X, Check } from 'lucide-react';
+import { FileText, Zap, ShieldCheck, Target, Tag, PenLine, FileDown, Star, ArrowRight, Gift, Shield, Menu, X, Check, Crown } from 'lucide-react';
 import { AI_ENGINE_NAME } from '../constants/branding.js';
 
 const testimonials = [
@@ -71,6 +71,9 @@ export default function LandingPage() {
             <a href="#how-it-works" className="text-[#94a3b8] hover:text-white text-sm font-medium transition-colors">
               How It Works
             </a>
+            <a href="#pricing" className="text-[#94a3b8] hover:text-white text-sm font-medium transition-colors">
+              Pricing
+            </a>
             <a href="#testimonials" className="text-[#94a3b8] hover:text-white text-sm font-medium transition-colors">
               Testimonials
             </a>
@@ -95,6 +98,7 @@ export default function LandingPage() {
           >
             <a href="#features" onClick={() => setMenuOpen(false)} className="block text-[#94a3b8] text-sm">Features</a>
             <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="block text-[#94a3b8] text-sm">How It Works</a>
+            <a href="#pricing" onClick={() => setMenuOpen(false)} className="block text-[#94a3b8] text-sm">Pricing</a>
             <a href="#testimonials" onClick={() => setMenuOpen(false)} className="block text-[#94a3b8] text-sm">Testimonials</a>
             <Link to="/auth/login" onClick={() => setMenuOpen(false)} className="block w-full bg-brand-purple text-white text-center py-2 rounded-lg text-sm font-semibold">
               Get Started Free
@@ -191,8 +195,8 @@ export default function LandingPage() {
                   <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Before</span>
                   <span className="px-2 py-1 rounded-full text-xs font-bold text-red-400 bg-red-500/15 border border-red-500/30">34</span>
                 </div>
-                <p className="font-semibold text-[#94a3b8] mb-1">Teju</p>
-                <p className="text-xs text-[#64748b] mb-3">teju@gmail.com | linkedin.com/in/teju</p>
+                <p className="font-semibold text-[#94a3b8] mb-1">Natalia</p>
+                <p className="text-xs text-[#64748b] mb-3">natalia@gmail.com | linkedin.com/in/natalia</p>
                 <p className="text-xs text-[#94a3b8] font-semibold uppercase tracking-wide mb-2">Experience</p>
                 <p className="text-xs text-[#64748b] font-medium mb-2">Software Developer — TechSoft India</p>
                 <p className="text-xs text-[#64748b] mb-2">- Worked on some projects</p>
@@ -214,8 +218,8 @@ export default function LandingPage() {
                   <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">After</span>
                   <span className="px-2 py-1 rounded-full text-xs font-bold text-green-400 bg-green-500/15 border border-green-500/30">91</span>
                 </div>
-                <p className="font-semibold text-white mb-1">Teju</p>
-                <p className="text-xs text-[#94a3b8] mb-3">teju@gmail.com | linkedin.com/in/teju</p>
+                <p className="font-semibold text-white mb-1">Natalia</p>
+                <p className="text-xs text-[#94a3b8] mb-3">natalia@gmail.com | linkedin.com/in/natalia</p>
                 <p className="text-xs text-white font-semibold uppercase tracking-wide mb-2">Experience</p>
                 <p className="text-xs text-white font-medium mb-2">Software Developer — TechSoft India</p>
                 <p className="text-xs text-[#e2e8f0] mb-2">- Architected 3 React dashboards reducing load time by 45%</p>
@@ -356,6 +360,203 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-[#94a3b8] text-lg max-w-2xl mx-auto">
+              Choose the plan that works best for you. No hidden fees.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Free Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0 }}
+              className="glass-card p-8 rounded-2xl border border-white/10 flex flex-col"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <Zap size={24} className="text-yellow-400" />
+                <h3 className="text-2xl font-bold text-white">Free</h3>
+              </div>
+              <p className="text-[#64748b] mb-6 flex-1">Perfect for trying out</p>
+              <div className="mb-8">
+                <div className="text-4xl font-bold text-white">₹0</div>
+                <p className="text-[#64748b] text-sm">/forever</p>
+              </div>
+              <Link
+                to="/auth/login"
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 rounded-lg transition-colors mb-8 text-center"
+              >
+                Go Unlimited
+              </Link>
+              <ul className="space-y-3 text-sm text-[#94a3b8]">
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  2 resume optimizations (one-time)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  2 resumes to create
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  ATS score analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Keyword gap detection
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Basic bullet rewrites
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  PDF export
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* Starter Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="glass-card p-8 rounded-2xl border border-white/10 flex flex-col"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <Star size={24} className="text-blue-400" />
+                <h3 className="text-2xl font-bold text-white">Starter</h3>
+              </div>
+              <p className="text-[#64748b] mb-6 flex-1">Job seeker essentials</p>
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="text-4xl font-bold text-white">₹99</div>
+                  <div className="text-lg text-[#64748b] line-through">₹299</div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[#64748b] text-sm">/one-time</p>
+                  <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded">Save 67%</span>
+                </div>
+              </div>
+              <Link
+                to="/auth/login"
+                className="w-full bg-brand-purple hover:bg-brand-purple-dark text-white font-semibold py-3 rounded-lg transition-colors mb-8 text-center"
+              >
+                Upgrade
+              </Link>
+              <ul className="space-y-3 text-sm text-[#94a3b8]">
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  5 resume optimizations
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Everything in Free
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Cover letter generator
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  DOCX + PDF export
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Job tracker access
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Priority email support
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* Power Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="glass-card p-8 rounded-2xl border-2 border-brand-purple bg-gradient-to-br from-brand-purple/10 to-transparent flex flex-col relative"
+            >
+              <div className="absolute -top-4 left-8 bg-brand-purple text-white text-xs font-bold px-4 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <Crown size={24} className="text-purple-400" />
+                <h3 className="text-2xl font-bold text-white">Power</h3>
+              </div>
+              <p className="text-[#64748b] mb-6 flex-1">For serious job seekers</p>
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="text-4xl font-bold text-white">₹499</div>
+                  <div className="text-lg text-[#64748b] line-through">₹799</div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[#64748b] text-sm">/year</p>
+                  <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded">Save 38%</span>
+                </div>
+              </div>
+              <Link
+                to="/auth/login"
+                className="w-full bg-brand-purple hover:bg-brand-purple-dark text-white font-semibold py-3 rounded-lg transition-colors mb-8 text-center"
+              >
+                Go Unlimited
+              </Link>
+              <ul className="space-y-3 text-sm text-[#94a3b8]">
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Unlimited optimizations
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Everything in Starter
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  5-dimension ATS scoring
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Weak verb replacement
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Recruiter tips included
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Full history access
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Priority support
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-green-400 flex-shrink-0" />
+                  Early access to features
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -379,24 +580,6 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-purple rounded-lg flex items-center justify-center">
-              <Zap size={14} className="text-white" />
-            </div>
-            <span className="font-extrabold text-white">SureCv</span>
-          </div>
-          <div className="flex gap-6 text-sm text-[#64748b]">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
-          </div>
-          <p className="text-[#475569] text-xs">© 2025 SureCv. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

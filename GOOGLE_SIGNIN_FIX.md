@@ -24,16 +24,9 @@ Firebase OAuth requires a specific auth domain that Google recognizes. Using a c
 
 ## Testing
 
-### On Netlify (surecv.in)
+### Locally
 
-1. **Option 1: Deploy first**
-   - Push code to GitHub
-   - Netlify auto-deploys
-   - Go to https://surecv.in
-   - Click "Continue with Google"
-   - Should work now ✅
-
-2. **Option 2: Test locally**
+1. **Start dev server**
    ```bash
    npm run dev
    # Open http://localhost:5173
@@ -41,16 +34,15 @@ Firebase OAuth requires a specific auth domain that Google recognizes. Using a c
    # Google popup should appear
    ```
 
-### Expected Behavior
-
-✅ Google popup appears  
-✅ Select Google account  
-✅ Redirects back to app  
-✅ Signed in successfully  
+2. **Expected Behavior**
+   - Google popup appears ✅
+   - Select Google account ✅
+   - Redirects back to app ✅
+   - Signed in successfully ✅
 
 ### Error Messages
 
-If it still fails, you'll see detailed error messages:
+If it fails, you'll see detailed error messages:
 
 | Error | Cause | Fix |
 |-------|-------|-----|
@@ -61,7 +53,7 @@ If it still fails, you'll see detailed error messages:
 
 ## Production Deployment Checklist
 
-For Google Sign-In to work on surecv.in:
+For Google Sign-In to work on your production domain:
 
 ### On Google Cloud Console
 
@@ -72,10 +64,11 @@ For Google Sign-In to work on surecv.in:
 5. Click to edit
 6. Add to "Authorized JavaScript origins":
    - `https://surecv-24fe0.firebaseapp.com`
-   - `https://surecv.in` (optional, for custom domain later)
+   - `https://your-domain.com` (your production domain)
 7. Add to "Authorized redirect URIs":
    - `https://surecv-24fe0.firebaseapp.com/__/auth/handler`
    - `https://surecv-24fe0.firebaseapp.com/auth/callback`
+   - `https://your-domain.com/__/auth/handler` (if using custom domain)
 8. Click Save
 
 ### On Firebase Console

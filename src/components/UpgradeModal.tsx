@@ -26,7 +26,7 @@ const planDetails = {
   power: {
     name: 'Power',
     price: '₹499',
-    period: '/month',
+    period: '/year',
     features: [
       'Unlimited optimizations',
       'Resume History',
