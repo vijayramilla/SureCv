@@ -11,7 +11,10 @@ import {
 import { enforceResumeStructure } from './enforceResumeStructure';
 import { isRetryableApiError, parseApiError } from './apiErrors';
 
-// NVIDIA API Configuration
+// Backend Proxy Configuration
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+// NVIDIA API Configuration (kept for reference, now proxied through backend)
 const NVIDIA_API_KEY = (import.meta.env.VITE_NVIDIA_API_KEY as string);
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 const NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct';
@@ -464,7 +467,7 @@ CONSTANTS & RULES (NEVER OVERRIDE)
 
 
 /**
- * Optimize resume for ATS using NVIDIA LLaMA 3.3-70B
+ * Optimize resume for ATS using backend proxy
  */
 export async function optimizeResume(
   resume: string,
@@ -485,196 +488,114 @@ export async function optimizeResume(
     );
   }
 
-  const userMessage = `Optimize this resume against the job description using ATS best practices.
-
-RESUME:
-${resume}
-
-JOB DESCRIPTION:
-${jobDescription}
-
-Return ONLY this JSON structure (pure JSON, no markdown):
-{
-  "atsScore": <0-100>,
-  "scoreDimensions": {
-    "keywordMatch": <0-100>,
-    "formatScore": <0-100>,
-    "actionVerbScore": <0-100>,
-    "quantifiedBullets": <0-100>,
-    "sectionCompleteness": <0-100>
-  },
-  "scoreLabel": <"Poor"|"Fair"|"Good"|"Excellent">,
-  "missingKeywords": [<max 10 exact JD keywords not in resume>],
-  "addedKeywords": [<max 10 keywords you added in rewrite>],
-  "weakVerbsFound": [<array of {original, replacement}>],
-  "bulletsImproved": <number>,
-  "metricsAdded": <number>,
-  "industryDetected": <"tech"|"finance"|"healthcare"|"marketing"|"general">,
-  "recruiterTips": [<3-5 specific tips>],
-  "rewrittenResume": "<must strictly follow: name line, contact line with | separators, PROFESSIONAL SUMMARY, WORK EXPERIENCE, SKILLS, EDUCATION, CERTIFICATIONS>",
-  "coverLetterPoints": [<3 key points to emphasize>],
-  "scoreData": {
-    "before": <original ATS 0-100>,
-    "after": <optimized ATS 0-100>,
-    "keywords_added": <number>,
-    "bullets_rewritten": <number>,
-    "skills_match_pct": <0-100>,
-    "keywords_added_list": ["keyword1"],
-    "keywords_missing_list": ["keyword2"],
-    "verbs_replaced": [{"from": "Worked", "to": "Developed"}],
-    "analysis_message": "<why the score is high or what changed>",
-    "rubric_message": "<one line about rubric fit>",
-    "tips": ["tip1", "tip2", "tip3"]
-  }
-}`;
-
   try {
-    const response = await callNvida(ATS_OPTIMIZATION_SYSTEM_PROMPT, userMessage, {
-      timeoutMs: 90000,
+    const response = await fetch(`${API_BASE}/api/optimize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resumeText: resume,
+        jobDescription: jobDescription,
+        userInstructions: '',
+        resumeLength: 'auto'
+      })
     });
 
-    const jsonPart = extractJsonFromAiResponse(response);
-    const parsed = safeParseJSON(jsonPart) as ATSOptimizationResult & {
-      scoreData?: Record<string, unknown>;
-    };
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Optimization failed' }));
+      throw new Error(err.error || `API error: ${response.status}`);
+    }
 
-    // Calculate ATS score
-    const atsScore = Math.round(Math.max(0, Math.min(100, parsed.atsScore || 50)));
-    const originalScore = parsed.original_score || Math.max(20, atsScore - 25);
-    const optimizedScore = parsed.optimized_score || atsScore;
-
-    // Clean resume text: convert \n to newlines, remove markdown
-    const cleanedResumeText = cleanResumeText(parsed.rewrittenResume || '');
+    const data = await response.json();
 
     // Validate and ensure all required fields
     const structuredResume = enforceResumeStructure(
-      cleanedResumeText,
-      parsed.candidate_name || 'Candidate Name'
+      data.rewrittenResume || '',
+      'Candidate Name'
     );
 
     const result: ATSOptimizationResult = {
-      atsScore,
+      atsScore: Math.max(0, Math.min(100, data.atsAfter || 50)),
+      atsBefore: data.atsBefore || 30,
+      atsAfter: data.atsAfter || 50,
       scoreDimensions: {
-        keywordMatch: Math.max(0, Math.min(100, parsed.scoreDimensions?.keywordMatch || 0)),
-        formatScore: Math.max(0, Math.min(100, parsed.scoreDimensions?.formatScore || 0)),
-        actionVerbScore: Math.max(0, Math.min(100, parsed.scoreDimensions?.actionVerbScore || 0)),
-        quantifiedBullets: Math.max(0, Math.min(100, parsed.scoreDimensions?.quantifiedBullets || 0)),
-        sectionCompleteness: Math.max(0, Math.min(100, parsed.scoreDimensions?.sectionCompleteness || 0)),
+        keywordMatch: Math.max(0, Math.min(100, data.scoreDimensions?.keywordMatch || 0)),
+        formatScore: Math.max(0, Math.min(100, data.scoreDimensions?.formatScore || 0)),
+        actionVerbScore: Math.max(0, Math.min(100, data.scoreDimensions?.actionVerbScore || 0)),
+        quantifiedBullets: Math.max(0, Math.min(100, data.scoreDimensions?.quantifiedBullets || 0)),
+        sectionCompleteness: Math.max(0, Math.min(100, data.scoreDimensions?.sectionCompleteness || 0)),
       },
-      scoreLabel: (parsed.scoreLabel || 'Fair') as 'Poor' | 'Fair' | 'Good' | 'Excellent',
-      missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.slice(0, 10) : [],
-      addedKeywords: Array.isArray(parsed.addedKeywords) ? parsed.addedKeywords.slice(0, 10) : [],
-      weakVerbsFound: Array.isArray(parsed.weakVerbsFound) ? parsed.weakVerbsFound : [],
-      bulletsImproved: parsed.bulletsImproved || 0,
-      metricsAdded: parsed.metricsAdded || 0,
-      industryDetected: (parsed.industryDetected || 'general') as 'tech' | 'finance' | 'healthcare' | 'marketing' | 'general',
-      recruiterTips: Array.isArray(parsed.recruiterTips) ? parsed.recruiterTips : [],
+      scoreLabel: (data.scoreLabel || 'Fair') as 'Poor' | 'Fair' | 'Good' | 'Excellent',
+      missingKeywords: Array.isArray(data.missingKeywords) ? data.missingKeywords.slice(0, 10) : [],
+      addedKeywords: Array.isArray(data.addedKeywords) ? data.addedKeywords.slice(0, 10) : [],
+      weakVerbsFound: Array.isArray(data.weakVerbsReplaced) 
+        ? data.weakVerbsReplaced.map((item: any) => ({ 
+            original: item.original, 
+            replacement: item.replacement 
+          })) 
+        : [],
+      bulletsImproved: data.bulletsRewritten || 0,
+      metricsAdded: data.metricsAdded || 0,
+      industryDetected: (data.industryDetected || 'general') as 'tech' | 'finance' | 'healthcare' | 'marketing' | 'general',
+      recruiterTips: Array.isArray(data.recruiterTips) ? data.recruiterTips : [],
       rewrittenResume: structuredResume,
-      coverLetterPoints: Array.isArray(parsed.coverLetterPoints) ? parsed.coverLetterPoints : [],
+      coverLetterPoints: Array.isArray(data.coverLetterPoints) ? data.coverLetterPoints : [],
 
       // Backward compatibility fields
-      original_score: originalScore,
-      optimized_score: optimizedScore,
-      score_lift: optimizedScore - originalScore,
-      candidate_name: parsed.candidate_name || 'You',
-      target_role: parsed.target_role || 'Position',
-      target_company: parsed.target_company || 'Company',
-      keywords_added: parsed.keywords_added || parsed.addedKeywords,
-      keywords_missing: parsed.keywords_missing || parsed.missingKeywords,
-      ats_compatibility: parsed.ats_compatibility || {
-        taleo: Math.round(atsScore * 0.95),
-        workday: Math.round(atsScore * 0.92),
-        greenhouse: Math.round(atsScore * 0.88),
-        lever: Math.round(atsScore * 0.90),
+      original_score: data.atsBefore || 30,
+      optimized_score: data.atsAfter || 50,
+      score_lift: (data.atsAfter || 50) - (data.atsBefore || 30),
+      candidate_name: 'You',
+      target_role: 'Position',
+      target_company: 'Company',
+      keywords_added: Array.isArray(data.addedKeywords) ? data.addedKeywords : [],
+      keywords_missing: Array.isArray(data.missingKeywords) ? data.missingKeywords : [],
+      ats_compatibility: {
+        taleo: Math.round((data.atsAfter || 50) * 0.95),
+        workday: Math.round((data.atsAfter || 50) * 0.92),
+        greenhouse: Math.round((data.atsAfter || 50) * 0.88),
+        lever: Math.round((data.atsAfter || 50) * 0.90),
       },
     };
 
-    return enrichOptimizationResult(result, response, parsed.scoreData);
+    return enrichOptimizationResult(result, JSON.stringify(data), {});
   } catch (error) {
-    console.error('NVIDIA API optimization error:', error);
+    console.error('Resume optimization error:', error);
     throw error;
   }
 }
 
 /**
- * Generate cover letter using NVIDIA — Following 6-Stage Algorithm Principles
+ * Generate cover letter using backend proxy
  */
 export async function generateCoverLetter(
   resume: string,
   jobDescription: string,
-  tone: 'Professional' | 'Friendly' | 'Formal' = 'Professional'
+  jobTitle: string = '',
+  companyName: string = '',
+  tone: 'professional' | 'confident' | 'enthusiastic' | 'formal' = 'professional'
 ): Promise<string> {
-  const systemPrompt = `You are an elite Cover Letter Generation Engine powered by NVIDIA LLM APIs.
-Your sole purpose is to create compelling, ATS-optimized cover letters that showcase candidate fit.
-
-STAGE 1 — PARSE INPUTS:
-- Extract candidate's name, title, key achievements from resume
-- Extract job title, required skills, company values from JD
-- Identify must-have keywords that appear 2+ times in JD
-
-STAGE 2 — KEYWORD ALIGNMENT:
-- Mirror exact phrases from job description
-- Use power action verbs (Engineered, Architected, Spearheaded, Delivered, Optimized)
-- Avoid weak words: "passionate", "dynamic", "results-driven", "team player"
-
-STAGE 3 — STRUCTURE:
-Paragraph 1 (3–4 sentences):
-  - Opening: Specific reason for applying (mention company name and role)
-  - Show you've researched the company
-  - Connect your background to their needs
-
-Paragraph 2 (4–5 sentences):
-  - Your MOST relevant achievement from resume
-  - Quantified result (%, $, time, impact)
-  - Use 1–2 keywords from job description
-  - Prove you can deliver immediate value
-
-Paragraph 3 (2–3 sentences):
-  - Confident call-to-action
-  - Mention specific value you'll bring
-  - Professional but enthusiastic close
-
-STAGE 4 — QUALITY RULES:
-- Total: 200–250 words
-- Tone: ${tone}
-- All facts must come from the resume (never fabricate)
-- Zero clichés
-- No "Dear Hiring Manager" greeting (that's added by the PDF renderer)
-- Start directly with the opening paragraph
-- Plain text only, no formatting, no markdown
-
-STAGE 5 — ACCURACY GATE:
-- Every claim must be verified from resume
-- No exaggerated metrics
-- No invented experience
-- Flag any skills not evidenced by resume
-
-STAGE 6 — OUTPUT:
-Return ONLY the cover letter plain text (no JSON, no subject line, no signature block).
-Three paragraphs separated by blank lines.
-Ready to be inserted into PDF with name/date/contact pre-filled.`;
-
-  const userMessage = `Extract candidate info and write a compelling cover letter.
-
-RESUME:
-${resume}
-
-JOB DESCRIPTION:
-${jobDescription}
-
-Generate the cover letter text only (no JSON, no preamble).`;
-
   try {
-    const letter = await callNvida(systemPrompt, userMessage, { timeoutMs: 60000 });
-    // Clean up the letter: remove any markdown, quotes, or extra formatting
-    return letter
-      .replace(/^["'`\s]+|["'`\s]+$/g, '') // Remove leading/trailing quotes/spaces
-      .replace(/\\n/g, '\n') // Convert literal \n to real newlines
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove markdown bold
-      .replace(/\*(.*?)\*/g, '$1') // Remove markdown italic
-      .trim();
+    const response = await fetch(`${API_BASE}/api/cover-letter`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resumeText: resume,
+        jobDescription: jobDescription,
+        jobTitle: jobTitle || 'the position',
+        companyName: companyName || 'the company',
+        tone: tone
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Generation failed' }));
+      throw new Error(err.error || 'Cover letter generation failed');
+    }
+
+    const data = await response.json();
+    return data.coverLetter || '';
   } catch (error) {
-    console.error('NVIDIA cover letter generation error:', error);
+    console.error('Cover letter generation error:', error);
     throw error;
   }
 }

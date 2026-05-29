@@ -11,32 +11,45 @@ import { Download, Loader2 } from 'lucide-react'
 const CL = StyleSheet.create({
   page: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 56,
-    paddingBottom: 56,
-    paddingLeft: 60,
-    paddingRight: 60,
     fontFamily: 'Helvetica',
     fontSize: 10.5,
     color: '#1a1a1a',
+    paddingTop: 0,
+    paddingBottom: 50,
+    paddingLeft: 0,
+    paddingRight: 0,
     lineHeight: 1.65,
   },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 6,
+
+  // BLACK TOP BAR — premium letterhead
+  topAccentBar: {
     backgroundColor: '#000000',
+    height: 8,
+    width: '100%',
+    marginBottom: 0,
   },
+
+  // PURPLE SECONDARY BAR
+  secondaryBar: {
+    backgroundColor: '#7c3aed',
+    height: 3,
+    width: '100%',
+    marginBottom: 28,
+  },
+
+  // CONTENT WRAPPER
+  content: {
+    paddingLeft: 56,
+    paddingRight: 56,
+  },
+
+  // SENDER HEADER BLOCK
   senderBlock: {
-    marginBottom: 20,
-    borderBottomWidth: 0.75,
-    borderBottomColor: '#000000',
-    paddingBottom: 12,
+    marginBottom: 6,
   },
   senderName: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 20,
+    fontSize: 22,
     color: '#000000',
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -48,71 +61,98 @@ const CL = StyleSheet.create({
     color: '#555555',
     lineHeight: 1.5,
   },
+
+  // DIVIDER UNDER HEADER
+  headerDivider: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#000000',
+    marginTop: 10,
+    marginBottom: 18,
+  },
+
+  // META ROW — date left, applying for right
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 18,
+  },
   dateText: {
     fontFamily: 'Helvetica',
-    fontSize: 9.5,
+    fontSize: 9,
     color: '#666666',
-    marginBottom: 16,
   },
-  recipientBlock: {
-    marginBottom: 16,
+  applyingBlock: {
+    alignItems: 'flex-end',
   },
-  recipientLabel: {
+  applyingLabel: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8.5,
-    color: '#000000',
+    fontSize: 7.5,
+    color: '#7c3aed',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    marginBottom: 3,
+    marginBottom: 2,
   },
-  recipientValue: {
+  applyingValue: {
     fontFamily: 'Helvetica',
-    fontSize: 10,
-    color: '#333333',
+    fontSize: 9.5,
+    color: '#222222',
+    textAlign: 'right',
   },
-  divider: {
-    height: 0.5,
-    backgroundColor: '#dddddd',
-    marginBottom: 16,
+
+  // THIN SEPARATOR
+  thinLine: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#dddddd',
+    marginBottom: 18,
   },
+
+  // GREETING
   greeting: {
     fontFamily: 'Helvetica-Bold',
     fontSize: 11,
     color: '#000000',
     marginBottom: 14,
   },
+
+  // PARAGRAPH
   paragraph: {
     fontFamily: 'Helvetica',
     fontSize: 10.5,
     color: '#222222',
-    lineHeight: 1.7,
-    marginBottom: 12,
+    lineHeight: 1.72,
+    marginBottom: 13,
     textAlign: 'justify',
   },
+
+  // ACHIEVEMENT HIGHLIGHT BOX
+  // Used for paragraph 2 (the proof paragraph)
   highlightBox: {
     borderLeftWidth: 3,
     borderLeftColor: '#000000',
-    paddingLeft: 12,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingRight: 8,
-    backgroundColor: '#f8f8f8',
-    marginBottom: 12,
+    paddingLeft: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingRight: 10,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 13,
   },
   highlightText: {
-    fontFamily: 'Helvetica-Oblique',
+    fontFamily: 'Helvetica',
     fontSize: 10,
-    color: '#333333',
-    lineHeight: 1.6,
+    color: '#222222',
+    lineHeight: 1.68,
   },
+
+  // CLOSING BLOCK
   closingBlock: {
-    marginTop: 20,
+    marginTop: 18,
   },
   closingLine: {
     fontFamily: 'Helvetica',
     fontSize: 10.5,
     color: '#333333',
-    marginBottom: 24,
+    marginBottom: 26,
   },
   signatureName: {
     fontFamily: 'Helvetica-Bold',
@@ -121,49 +161,74 @@ const CL = StyleSheet.create({
     letterSpacing: 0.5,
   },
   signatureTitle: {
-    fontFamily: 'Helvetica-Oblique',
+    fontFamily: 'Helvetica',
+    fontSize: 9,
+    color: '#666666',
+    marginTop: 3,
+  },
+  signatureContact: {
+    fontFamily: 'Helvetica',
     fontSize: 9,
     color: '#666666',
     marginTop: 2,
   },
-  footer: {
+
+  // BOTTOM ACCENT
+  bottomAccent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 5,
+    backgroundColor: '#000000',
+  },
+
+  // PAGE NUMBER
+  pageNum: {
     position: 'absolute',
     bottom: 20,
-    left: 60,
-    right: 60,
-    borderTopWidth: 0.5,
-    borderTopColor: '#cccccc',
-    paddingTop: 4,
+    left: 56,
+    right: 56,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
-  footerText: {
+  pageNumText: {
     fontFamily: 'Helvetica',
     fontSize: 7,
-    color: '#aaaaaa',
+    color: '#cccccc',
   },
 })
 
-function getDate(): string {
+function getFormattedDate() {
   return new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
+    day: 'numeric'
   })
 }
 
-function parseCoverLetter(text: string, resumeText?: string) {
-  const resumeLines = (resumeText || '')
+function parseMeta(resumeText: string) {
+  const lines = (resumeText || '')
     .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-  const name = resumeLines[0] || ''
-  const contact = resumeLines[1] || ''
-  const paragraphs = (text || '')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+  
+  const name = lines[0]?.replace(/[*_#]/g, '').trim() || ''
+  
+  const contactLine = lines.find(l =>
+    l.includes('@') || l.includes('|') ||
+    /\+?\d[\d\s\-()]{7,}/.test(l)
+  ) || ''
+
+  return { name, contact: contactLine }
+}
+
+function splitIntoParagraphs(text: string) {
+  if (!text) return []
+  return text
     .split(/\n\n+/)
-    .map((p) => p.replace(/\n/g, ' ').trim())
-    .filter((p) => p.length > 20)
-  return { name, contact, paragraphs }
+    .map(p => p.replace(/\n/g, ' ').trim())
+    .filter(p => p.length > 15)
 }
 
 export function CoverLetterDocument({
@@ -177,55 +242,91 @@ export function CoverLetterDocument({
   jobTitle?: string
   companyName?: string
 }) {
-  const { name, contact, paragraphs } = parseCoverLetter(coverLetterText, resumeText)
-  const highlightIdx = paragraphs.length >= 3 ? 1 : -1
+  const { name, contact } = parseMeta(resumeText || '')
+  const paragraphs = splitIntoParagraphs(coverLetterText)
+
+  // Paragraph 2 gets the highlight box treatment
+  // (it contains the achievements/metrics)
+  const highlightParagraphIndex = 1
 
   return (
-    <Document title={`${name} — Cover Letter`} author={name}>
+    <Document
+      title={`${name} — Cover Letter`}
+      author="SureCv.ai"
+    >
       <Page size="A4" style={CL.page}>
-        <View style={CL.topBar} fixed />
 
-        <View style={CL.senderBlock}>
-          <Text style={CL.senderName}>{name}</Text>
-          {contact ? <Text style={CL.senderContact}>{contact}</Text> : null}
-        </View>
+        {/* BLACK TOP BAR */}
+        <View style={CL.topAccentBar} fixed />
+        
+        {/* PURPLE ACCENT */}
+        <View style={CL.secondaryBar} fixed />
 
-        <Text style={CL.dateText}>{getDate()}</Text>
+        {/* MAIN CONTENT */}
+        <View style={CL.content}>
 
-        <View style={CL.recipientBlock}>
-          <Text style={CL.recipientLabel}>Applying For</Text>
-          <Text style={CL.recipientValue}>{jobTitle}</Text>
-          {companyName ? (
-            <Text style={CL.recipientValue}>{companyName}</Text>
-          ) : null}
-        </View>
+          {/* SENDER HEADER */}
+          <View style={CL.senderBlock}>
+            <Text style={CL.senderName}>{name}</Text>
+            {contact ? (
+              <Text style={CL.senderContact}>{contact}</Text>
+            ) : null}
+          </View>
 
-        <View style={CL.divider} />
+          {/* HEADER DIVIDER */}
+          <View style={CL.headerDivider} />
 
-        <Text style={CL.greeting}>Dear Hiring Manager,</Text>
-
-        {paragraphs.map((para, i) =>
-          i === highlightIdx ? (
-            <View key={i} style={CL.highlightBox}>
-              <Text style={CL.highlightText}>{para}</Text>
+          {/* META ROW */}
+          <View style={CL.metaRow}>
+            <Text style={CL.dateText}>{getFormattedDate()}</Text>
+            <View style={CL.applyingBlock}>
+              <Text style={CL.applyingLabel}>Applying For</Text>
+              <Text style={CL.applyingValue}>
+                {jobTitle}
+              </Text>
+              {companyName ? (
+                <Text style={CL.applyingValue}>
+                  {companyName}
+                </Text>
+              ) : null}
             </View>
-          ) : (
-            <Text key={i} style={CL.paragraph}>
-              {para}
+          </View>
+
+          {/* THIN LINE */}
+          <View style={CL.thinLine} />
+
+          {/* GREETING */}
+          <Text style={CL.greeting}>Dear Hiring Manager,</Text>
+
+          {/* PARAGRAPHS */}
+          {paragraphs.map((para, i) => (
+            i === highlightParagraphIndex ? (
+              <View key={i} style={CL.highlightBox}>
+                <Text style={CL.highlightText}>{para}</Text>
+              </View>
+            ) : (
+              <Text key={i} style={CL.paragraph}>{para}</Text>
+            )
+          ))}
+
+          {/* CLOSING */}
+          <View style={CL.closingBlock}>
+            <Text style={CL.closingLine}>
+              Sincerely,
             </Text>
-          )
-        )}
+            <Text style={CL.signatureName}>{name}</Text>
+            {contact ? (
+              <Text style={CL.signatureContact}>
+                {contact}
+              </Text>
+            ) : null}
+          </View>
 
-        <View style={CL.closingBlock}>
-          <Text style={CL.closingLine}>Sincerely,</Text>
-          <Text style={CL.signatureName}>{name}</Text>
-          {contact ? <Text style={CL.signatureTitle}>{contact}</Text> : null}
         </View>
 
-        <View style={CL.footer} fixed>
-          <Text style={CL.footerText}>Generated by SureCv.ai</Text>
-          <Text style={CL.footerText}>Confidential</Text>
-        </View>
+        {/* BOTTOM BLACK BAR */}
+        <View style={CL.bottomAccent} fixed />
+
       </Page>
     </Document>
   )
@@ -236,19 +337,16 @@ export function DownloadCoverLetterButton({
   resumeText,
   jobTitle,
   companyName,
-  candidateName,
-  className,
 }: {
   coverLetterText: string
   resumeText?: string
   jobTitle?: string
   companyName?: string
-  candidateName?: string
-  className?: string
 }) {
-  const btnClass =
-    className ||
-    'flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-2.5 rounded-xl border border-white/10 transition-all disabled:opacity-50 w-full'
+  const name = resumeText
+    ?.split('\n')
+    .find(l => l.trim().length > 1)
+    ?.trim() || 'Candidate'
 
   return (
     <PDFDownloadLink
@@ -256,25 +354,25 @@ export function DownloadCoverLetterButton({
         <CoverLetterDocument
           coverLetterText={coverLetterText}
           resumeText={resumeText}
-          jobTitle={jobTitle || 'the Position'}
+          jobTitle={jobTitle || 'Position'}
           companyName={companyName || ''}
         />
       }
-      fileName={`${(candidateName || 'Cover-Letter').replace(/\s+/g, '-')}_Cover_Letter.pdf`}
+      fileName={`SureCv-CoverLetter-${name.replace(/\s+/g, '-')}.pdf`}
     >
-      {({ loading }) =>
-        loading ? (
-          <button type="button" disabled className={btnClass}>
-            <Loader2 size={14} className="animate-spin" />
-            Preparing…
-          </button>
-        ) : (
-          <button type="button" className={btnClass}>
-            <Download size={14} />
-            Cover Letter PDF
-          </button>
-        )
-      }
+      {({ loading }) => (
+        <button
+          disabled={loading}
+          className="flex items-center justify-center gap-2
+            border border-white/20 hover:border-purple-400/50
+            text-white px-8 py-4 rounded-xl font-semibold
+            transition-all hover:bg-white/5 disabled:opacity-60"
+        >
+          {loading
+            ? '⏳ Preparing...'
+            : '📄 Download Cover Letter PDF'}
+        </button>
+      )}
     </PDFDownloadLink>
   )
 }
