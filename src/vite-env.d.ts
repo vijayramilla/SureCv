@@ -18,7 +18,7 @@ interface ImportMetaEnv {
   readonly VITE_GEMINI_MODEL?: string
   // Razorpay Payment Keys
   readonly VITE_RAZORPAY_KEY_ID?: string
-  readonly VITE_RAZORPAY_SECRET_KEY?: string
+  // NOTE: RAZORPAY_SECRET_KEY must NEVER have VITE_ prefix (server-side only)
   // OpenAI API Key (if used)
   readonly VITE_OPENAI_API_KEY?: string
 }
