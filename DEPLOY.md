@@ -1,73 +1,86 @@
-# Deploy SureCv (surecv.in)
+# SureCv — Railway only (surecv.in)
 
-## Architecture
-
-| Service | Host | Purpose |
-|---------|------|---------|
-| Frontend | **https://surecv.in** (Vercel) | React app |
-| API | **https://api.surecv.in** (Railway) | NVIDIA NIM proxy (`server/`) |
+Everything runs on **one Railway project**: React site + API. No Vercel or other hosts.
 
 ---
 
-## 1. Railway (backend API)
+## Railway setup
 
-1. [Railway](https://railway.app) → **New Project** → deploy from GitHub.
-2. Set **Root Directory** to `server` (recommended).
-3. **Variables** (Settings → Variables):
+| Setting | Value |
+|---------|--------|
+| **Root Directory** | *(empty — repository root)* |
+| **Build Command** | `npm install && npm run build && cd server && npm install` |
+| **Start Command** | `node server/index.js` |
 
-   | Variable | Value |
-   |----------|--------|
-   | `NVIDIA_API_KEY` | `nvapi-...` (your key) |
-   | `FRONTEND_URL` | `https://surecv.in` |
-   | `NODE_ENV` | `production` |
-
-   `PORT` is set automatically by Railway.
-
-4. **Networking** → generate domain → add custom domain **`api.surecv.in`**.
-5. DNS (at your registrar):
-
-   ```
-   CNAME  api  →  <your-service>.up.railway.app
-   ```
-
-6. Verify: `https://api.surecv.in/health`  
-   → `{"status":"ok","service":"SureCv API","nvidia":"connected",...}`
+Custom domains: **surecv.in**, **www.surecv.in**
 
 ---
 
-## 2. Vercel (frontend — surecv.in)
+## Environment variables
 
-1. Import repo on [Vercel](https://vercel.com).
-2. Framework: **Vite**, build: `npm run build`, output: `dist`.
-3. **Environment variables**:
+Copy from **`railway.env.example`**.
 
-   | Variable | Value |
-   |----------|--------|
-   | `VITE_API_URL` | `https://api.surecv.in` |
-   | `VITE_FIREBASE_*` | (from Firebase console) |
-   | `VITE_RAZORPAY_KEY_ID` | (public key only) |
+### Secret (server only — no `VITE_` prefix)
 
-4. Add domains **`surecv.in`** and **`www.surecv.in`** in Vercel → point DNS to Vercel.
-5. **Firebase Console** → Authentication → Authorized domains → add `surecv.in`, `www.surecv.in`.
+| Variable | Purpose |
+|----------|---------|
+| `NVIDIA_API_KEY` | NVIDIA NIM (resume + cover letter) |
+| `RAZORPAY_SECRET_KEY` | Payment verification (if used server-side) |
+| `FRONTEND_URL` | `https://surecv.in` (CORS) |
+| `NODE_ENV` | `production` |
+
+### Public (safe in frontend build)
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | `https://surecv.in` |
+| `VITE_FIREBASE_*` | Firebase web config |
+| `VITE_RAZORPAY_KEY_ID` | Razorpay public key |
+
+### Never add on Railway
+
+These get embedded in the JavaScript sent to every visitor:
+
+- `VITE_NVIDIA_API_KEY` ❌  
+- `VITE_GEMINI_API_KEY` ❌  
+- `VITE_GROQ_API_KEY` ❌  
+- `GEMINI_API_KEY` without server-only handling ❌  
+
+AI calls go through **`/api/optimize`** on your server; the browser never sees NVIDIA keys.
 
 ---
 
-## 3. Local development
+## Security
 
-```bash
-# Terminal 1 — API
-cd server && npm install && npm start
+1. **`.env` is gitignored** — only set variables in Railway dashboard.  
+2. **Rotate keys** if they were ever committed or shared in chat.  
+3. **Firebase**: restrict API key to your domains in Google Cloud Console.  
+4. After deploy, open DevTools → Sources → search built JS for `nvapi-` or `gsk_` — should find **nothing**.
 
-# Terminal 2 — frontend
-npm install && npm run dev
+---
+
+## Verify deploy
+
+Logs:
+
+```text
+📦 Frontend: serving /dist
+✅ SureCv API running on 0.0.0.0:...
 ```
 
-`.env`: `VITE_API_URL=http://localhost:3001`
+URLs:
+
+- https://surecv.in — homepage  
+- https://surecv.in/health — `{"status":"ok","nvidia":"connected"}`  
+- https://surecv.in/optimize — optimizer  
+
+Firebase → Authentication → Authorized domains → `surecv.in`, `www.surecv.in`
 
 ---
 
-## Troubleshooting
+## DNS
 
-- **CORS error on surecv.in** → `FRONTEND_URL=https://surecv.in` on Railway; redeploy API.
-- **502 from API** → check `NVIDIA_API_KEY` on Railway logs.
-- **Frontend calls wrong host** → set `VITE_API_URL=https://api.surecv.in` on Vercel and redeploy.
+```
+CNAME  @    →  <your-service>.up.railway.app
+CNAME  www  →  <your-service>.up.railway.app
+```

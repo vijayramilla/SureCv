@@ -6,15 +6,13 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8787',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/nvidia-api': {
-        target: 'https://integrate.api.nvidia.com',
+      '/health': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/nvidia-api/, ''),
-      }
-    }
-  }
+      },
+    },
+  },
 })

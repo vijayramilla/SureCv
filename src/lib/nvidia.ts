@@ -13,13 +13,8 @@ import { isRetryableApiError, parseApiError } from './apiErrors';
 
 import { getApiBase } from './apiBase';
 
-// Backend proxy (NVIDIA key stays server-side only)
+// All optimization traffic goes through the Express proxy (keys stay on Railway only).
 const API_BASE = getApiBase();
-
-// NVIDIA API Configuration (kept for reference, now proxied through backend)
-const NVIDIA_API_KEY = (import.meta.env.VITE_NVIDIA_API_KEY as string);
-const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
-const NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct';
 
 export interface ATSScoreDimensions {
   keywordMatch: number;
@@ -64,123 +59,6 @@ export interface ATSOptimizationResult {
 }
 
 export type OptimizeResult = ATSOptimizationResult;
-
-/**
- * Call NVIDIA API with LLaMA 3.3-70B model
- * Includes automatic retry logic for rate limits
- */
-async function callNvida(
-  systemPrompt: string,
-  userMessage: string,
-  options?: { timeoutMs?: number }
-): Promise<string> {
-  if (!NVIDIA_API_KEY) {
-    throw new Error(
-      'NVIDIA API key not configured. Please check your environment setup.'
-    );
-  }
-
-  const maxRetries = 3;
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const controller = new AbortController();
-    const timeoutMs = options?.timeoutMs ?? 60000;
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${NVIDIA_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: NVIDIA_MODEL,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          temperature: 0.2,
-          top_p: 0.7,
-          max_tokens: 4096,
-          stream: false,
-        }),
-      });
-
-      clearTimeout(timeout);
-
-      if (response.status === 401) {
-        throw new Error(
-          'NVIDIA API authentication failed. Please contact support.'
-        );
-      }
-
-      const errorData = !response.ok
-        ? await response.json().catch(() => ({}))
-        : null;
-      const errMsg =
-        (errorData as { error?: { message?: string } })?.error?.message || '';
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          // Rate limit - extract wait time and retry
-          const retryAfter = response.headers.get('retry-after');
-          const waitSeconds = retryAfter ? parseInt(retryAfter, 10) : Math.min(3 + attempt * 2, 10);
-          
-          if (attempt < maxRetries) {
-            console.warn(
-              `[NVIDIA] Rate limited (attempt ${attempt + 1}/${maxRetries + 1}). Waiting ${waitSeconds}s...`
-            );
-            await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000));
-            continue; // Retry
-          } else {
-            throw new Error(
-              `NVIDIA API rate limit reached after ${maxRetries + 1} attempts. Please wait and try again.`
-            );
-          }
-        }
-        if (response.status === 503) {
-          throw new Error(
-            'NVIDIA API service temporarily unavailable. Please try again in a moment.'
-          );
-        }
-        throw new Error(errMsg || `API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error(
-          'Empty response from NVIDIA API. Please try again.'
-        );
-      }
-
-      return data.choices[0].message.content;
-    } catch (error: unknown) {
-      clearTimeout(timeout);
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('NVIDIA API request timed out. Please try again.');
-      }
-      
-      lastError = error instanceof Error ? error : new Error(String(error));
-      
-      // If not a rate limit error or we've exhausted retries, throw immediately
-      if (!lastError.message.includes('429') && !lastError.message.includes('rate limit')) {
-        throw lastError;
-      }
-      
-      // If we have more retries, continue
-      if (attempt < maxRetries) {
-        continue;
-      }
-    }
-  }
-
-  throw lastError || new Error('NVIDIA API request failed after retries.');
-}
 
 /** Safe JSON parsing utility */
 export function safeParseJSON(text: string): unknown {
@@ -602,34 +480,9 @@ export async function generateCoverLetter(
   }
 }
 
-/**
- * Improve bullet points using NVIDIA
- */
+/** Bullet improvement runs server-side only; use full optimize for AI rewrites. */
 export async function improveBulletPoint(bullet: string): Promise<string[]> {
-  const systemPrompt = `You are a resume bullet point expert. Rewrite the given bullet using: Action Verb + Tool/Asset + Scope + Quantified Outcome.
-
-Examples:
-WEAK: "Worked on backend systems"
-STRONG: "Engineered 5 REST APIs serving 100K daily requests, reducing response time by 35%"
-
-WEAK: "Helped with customer support"
-STRONG: "Resolved 80+ daily customer tickets maintaining 97% CSAT score"
-
-Keep factual content. Only improve how it's written. Give exactly 3 strong alternatives.
-
-Return ONLY valid JSON array of 3 improved bullet strings:
-["improved_bullet_1", "improved_bullet_2", "improved_bullet_3"]`;
-
-  const userMessage = `Original bullet: "${bullet}"`;
-
-  try {
-    const response = await callNvida(systemPrompt, userMessage);
-    const parsed = safeParseJSON(response) as string[];
-    return Array.isArray(parsed) ? parsed.slice(0, 3) : [bullet];
-  } catch (error) {
-    console.error('NVIDIA bullet improvement error:', error);
-    return [bullet];
-  }
+  return [bullet];
 }
 
 export type { EnrichedOptimizeResult };

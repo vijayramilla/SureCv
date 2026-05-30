@@ -1,10 +1,11 @@
-/** Production API host (Railway custom domain). */
+/** Separate API subdomain (optional split deploy). */
 export const PRODUCTION_API_URL = 'https://api.surecv.in'
 
 /**
  * Backend base URL for /api/* calls.
- * - VITE_API_URL when set (build-time)
- * - https://api.surecv.in when the app runs on surecv.in
+ * - VITE_API_URL when set at build time
+ * - Same origin on surecv.in (Railway full-stack: site + API on one domain)
+ * - https://api.surecv.in if VITE_API_URL points there
  * - http://localhost:3001 for local dev
  */
 export function getApiBase(): string {
@@ -16,7 +17,7 @@ export function getApiBase(): string {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
     if (host === 'surecv.in' || host === 'www.surecv.in') {
-      return PRODUCTION_API_URL
+      return window.location.origin
     }
   }
 

@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test:ai-keys": "node scripts/test-ai-keys.mjs",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "build:railway": "npm run build && node scripts/check-client-bundle-secrets.mjs && cd server && npm install"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

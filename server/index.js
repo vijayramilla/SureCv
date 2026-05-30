@@ -2,8 +2,16 @@ import express from 'express'
 import cors from 'cors'
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
+import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
 
 dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const distPath = path.resolve(__dirname, '..', 'dist')
+const hasFrontendBuild = fs.existsSync(path.join(distPath, 'index.html'))
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -36,6 +44,22 @@ function getAllowedOrigins() {
 }
 
 const allowedOrigins = getAllowedOrigins()
+
+app.disable('x-powered-by')
+
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  next()
+})
+
+app.use((req, res, next) => {
+  if (/\.(env|pem|key|crt)$/i.test(req.path) || req.path.includes('/.env')) {
+    return res.status(404).end()
+  }
+  next()
+})
 
 app.use(cors({
   origin(origin, callback) {
@@ -300,6 +324,32 @@ JD: ${jobDescription}`,
   }
 })
 
+// ─── SERVE FRONTEND (production full-stack on Railway) ─
+if (hasFrontendBuild && process.env.SERVE_STATIC !== 'false') {
+  console.log('[SureCv] Serving frontend from', distPath)
+  app.use(
+    express.static(distPath, {
+      maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+      index: false,
+    })
+  )
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next()
+    }
+    res.sendFile(path.join(distPath, 'index.html'), (err) => {
+      if (err) next(err)
+    })
+  })
+} else if (process.env.NODE_ENV === 'production') {
+  app.get('/', (_req, res) => {
+    res.status(503).json({
+      error: 'Frontend not built',
+      hint: 'Set Railway root to repo root and buildCommand: npm install && npm run build',
+    })
+  })
+}
+
 let httpServer = null
 
 function startServer(port) {
@@ -307,6 +357,7 @@ function startServer(port) {
     httpServer = server
     console.log(`✅ SureCv API running on ${HOST}:${port}`)
     console.log(`🔑 NVIDIA: ${process.env.NVIDIA_API_KEY ? 'Connected ✓' : 'MISSING KEY ✗'}`)
+    console.log(`📦 Frontend: ${hasFrontendBuild ? 'serving /dist' : 'API only (no dist/)'}`)
     console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`)
     if (process.env.RAILWAY_PUBLIC_DOMAIN) {
       console.log(`🚂 Railway: https://${process.env.RAILWAY_PUBLIC_DOMAIN}/health`)
