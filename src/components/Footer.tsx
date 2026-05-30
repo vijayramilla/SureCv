@@ -13,7 +13,6 @@ export default function Footer() {
               </div>
               <span className="text-white font-extrabold text-lg">SureCv</span>
             </div>
-            <p className="text-[#475569] text-xs">Built on state-of-the-art language technology</p>
           </div>
 
           <nav className="flex flex-wrap justify-center gap-6">
