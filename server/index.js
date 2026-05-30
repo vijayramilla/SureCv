@@ -5,7 +5,12 @@ import multer from 'multer'
 import { loadEnvFile } from './loadEnv.mjs'
 
 // Load environment variables from .env file (local development only)
-loadEnvFile()
+try {
+  loadEnvFile()
+  console.log('[SureCv] Local .env file loaded (if exists)')
+} catch (e) {
+  console.log('[SureCv] No local .env file - using Railway environment variables')
+}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -28,6 +33,7 @@ app.use(cors({
       'http://localhost:5174',
       'https://surecv.in',
       'https://www.surecv.in',
+      'https://surecv-production.up.railway.app',
       FRONTEND_URL,
     ].filter(Boolean)
     
@@ -821,4 +827,16 @@ app.listen(PORT, () => {
   console.log(`   POST /api/cover-letter — Generate cover letter`)
   console.log(`   POST /api/parse-resume — Parse PDF resume`)
   console.log('════════════════════════════════════════════════\n')
+})
+
+// Global error handler for uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL ERROR]', err.message)
+  console.error(err.stack)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION]', reason)
+  process.exit(1)
 })
