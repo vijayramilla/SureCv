@@ -1,66 +1,75 @@
-// ─── GROQ/GEMINI API CALLS ─────
-// Use Groq and Gemini directly from frontend
-
-import { optimizeResume as optimizeResumeWithGroq } from './groq'
-import { optimizeResumeWithGemini } from './gemini'
+import {
+  analyzeResume as analyzeResumeViaProxy,
+  generateCoverLetter as generateCoverLetterViaProxy,
+} from '../utils/nvidia'
 
 export interface AnalysisResult {
-  score: number;
-  missingKeywords: string[];
-  rewrittenResume: string;
-  atsBefore?: number;
-  atsAfter?: number;
-  scoreDimensions?: Record<string, number>;
-  scoreLabel?: string;
-  industryDetected?: string;
-  addedKeywords?: string[];
-  weakVerbsReplaced?: Array<{ original: string; replacement: string }>;
-  bulletsRewritten?: number;
-  metricsAdded?: number;
-  recruiterTips?: string[];
-  coverLetterPoints?: string[];
+  score: number
+  missingKeywords: string[]
+  rewrittenResume: string
+  atsBefore?: number
+  atsAfter?: number
+  scoreDimensions?: Record<string, number>
+  scoreLabel?: string
+  industryDetected?: string
+  addedKeywords?: string[]
+  weakVerbsReplaced?: Array<{ original: string; replacement: string }>
+  bulletsRewritten?: number
+  metricsAdded?: number
+  recruiterTips?: string[]
+  coverLetterPoints?: string[]
 }
 
-// ─── MAIN ANALYZE FUNCTION ───────────────────────────
 export async function analyzeResume(
   resumeText: string,
   jobDescription: string,
   userInstructions: string = '',
   resumeLength: string = 'auto'
 ): Promise<AnalysisResult> {
-  try {
-    console.log('[Frontend] Optimizing with Groq...')
-    const result = await optimizeResumeWithGroq(resumeText, jobDescription)
-    return result as any as AnalysisResult
-  } catch (error) {
-    console.error('[Frontend] Groq failed, trying Gemini:', error)
-    try {
-      const result = await optimizeResumeWithGemini(resumeText, jobDescription)
-      return result as any as AnalysisResult
-    } catch (geminiError) {
-      console.error('[Frontend] Gemini also failed:', geminiError)
-      throw new Error('Resume optimization failed. Please try again.')
-    }
+  console.log('[Frontend] Optimizing via SureCv API (NVIDIA NIM proxy)...')
+  const data = await analyzeResumeViaProxy(
+    resumeText,
+    jobDescription,
+    userInstructions,
+    resumeLength
+  )
+
+  return {
+    score: data.atsAfter ?? 0,
+    missingKeywords: data.missingKeywords ?? [],
+    rewrittenResume: data.rewrittenResume ?? '',
+    atsBefore: data.atsBefore,
+    atsAfter: data.atsAfter,
+    scoreDimensions: data.scoreDimensions,
+    scoreLabel: data.scoreLabel,
+    industryDetected: data.industryDetected,
+    addedKeywords: data.addedKeywords,
+    weakVerbsReplaced: data.weakVerbsReplaced,
+    bulletsRewritten: data.bulletsRewritten,
+    metricsAdded: data.metricsAdded,
+    recruiterTips: data.recruiterTips,
+    coverLetterPoints: data.coverLetterPoints,
   }
 }
 
-// ─── STUB FUNCTIONS FOR COMPATIBILITY ─────────────────
-// These were previously used but now handled by backend
 export async function generateCoverLetter(
-  _resumeText: string,
-  _jobDescription: string,
-  _jobTitle?: string,
-  _companyName?: string
+  resumeText: string,
+  jobDescription: string,
+  jobTitle?: string,
+  companyName?: string
 ): Promise<string> {
-  // Cover letter is now generated via analyzeResume result
-  throw new Error('Use aiOptimization.ts for cover letter generation')
+  return generateCoverLetterViaProxy(
+    resumeText,
+    jobDescription,
+    jobTitle ?? '',
+    companyName ?? ''
+  )
 }
 
 export async function improveBullet(
   bullet: string,
   _jobTitle?: string
 ): Promise<string> {
-  // Not used in production flow
   return bullet
 }
 
@@ -68,6 +77,5 @@ export async function improveSummary(
   summary: string,
   _jobTitle?: string
 ): Promise<string> {
-  // Not used in production flow
   return summary
 }

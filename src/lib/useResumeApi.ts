@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+import { getApiBase } from './apiBase'
+
+const API_BASE = getApiBase()
 
 // ─── OPTIMIZE RESUME ──────────────────────────────────
 export async function optimizeResume(
@@ -23,10 +25,22 @@ export async function optimizeResume(
     throw new Error(err.error || 'Optimization failed')
   }
 
-  return response.json()
-  // Returns: { atsBefore, atsAfter, pdfUrl, scoreDimensions,
-  //            missingKeywords, addedKeywords, recruiterTips,
-  //            candidateName, creditsUsed, creditsRemaining }
+  const data = await response.json()
+  const rewritten =
+    (typeof data.rewrittenResume === 'string' && data.rewrittenResume) ||
+    (typeof data.optimizedResume === 'string' && data.optimizedResume) ||
+    ''
+
+  return {
+    ...data,
+    success: data.success ?? true,
+    rewrittenResume: rewritten,
+    optimizedResume: rewritten,
+    pdfUrl: data.pdfUrl ?? null,
+    pdfExpiresAt: data.pdfExpiresAt ?? null,
+    creditsUsed: data.creditsUsed ?? 0,
+    creditsRemaining: data.creditsRemaining ?? null,
+  }
 }
 
 // ─── GENERATE COVER LETTER ────────────────────────────
@@ -54,8 +68,16 @@ export async function generateCoverLetter(
     throw new Error(err.error || 'Cover letter failed')
   }
 
-  return response.json()
-  // Returns: { pdfUrl, coverLetterText, creditsUsed }
+  const data = await response.json()
+  return {
+    ...data,
+    success: data.success ?? true,
+    coverLetterText:
+      (typeof data.coverLetter === 'string' && data.coverLetter) ||
+      (typeof data.coverLetterText === 'string' && data.coverLetterText) ||
+      '',
+    pdfUrl: data.pdfUrl ?? null,
+  }
 }
 
 // ─── PARSE PDF RESUME ─────────────────────────────────
@@ -95,21 +117,27 @@ export interface OptimizeResponse {
   bulletsRewritten: number
   metricsAdded: number
   recruiterTips: string[]
-  pdfUrl: string
-  pdfExpiresAt: string
-  runId: string
+  rewrittenResume: string
+  optimizedResume: string
+  weakVerbsReplaced?: { original: string; replacement: string }[]
+  coverLetterPoints?: string[]
+  pdfUrl: string | null
+  pdfExpiresAt: string | null
   creditsUsed: number
-  creditsRemaining: number
+  creditsRemaining: number | null
   candidateName: string
 }
 
 export interface CoverLetterResponse {
   success: boolean
-  pdfUrl: string
-  pdfExpiresAt: string
-  runId: string
-  creditsUsed: number
+  coverLetter?: string
   coverLetterText: string
+  wordCount?: number
+  keywordsUsed?: string[]
+  pdfUrl: string | null
+  pdfExpiresAt?: string | null
+  runId?: string
+  creditsUsed?: number
 }
 
 export interface ParseResponse {

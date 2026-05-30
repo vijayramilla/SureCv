@@ -11,8 +11,10 @@ import {
 import { enforceResumeStructure } from './enforceResumeStructure';
 import { isRetryableApiError, parseApiError } from './apiErrors';
 
-// Backend Proxy Configuration
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { getApiBase } from './apiBase';
+
+// Backend proxy (NVIDIA key stays server-side only)
+const API_BASE = getApiBase();
 
 // NVIDIA API Configuration (kept for reference, now proxied through backend)
 const NVIDIA_API_KEY = (import.meta.env.VITE_NVIDIA_API_KEY as string);

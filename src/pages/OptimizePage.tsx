@@ -193,8 +193,7 @@ export default function OptimizePage() {
     }, 280)
 
     try {
-      // Call UseResume.ai API
-      console.log('[UseResume] Calling optimization endpoint...')
+      console.log('[SureCv] Calling Gemini optimize endpoint...')
       const result: OptimizeResponse = await callUseResumeApi(
         resume,
         jobDesc,
@@ -202,9 +201,13 @@ export default function OptimizePage() {
         resumeLength
       )
 
-      console.log('[UseResume] Optimization complete:', result)
+      console.log('[SureCv] Optimization complete:', result)
 
-      // Map UseResume response to our internal format
+      const rewrittenText =
+        result.rewrittenResume?.trim() ||
+        result.optimizedResume?.trim() ||
+        resume
+
       const finalResult: EnrichedOptimizeResult = {
         atsBefore: result.atsBefore,
         atsAfter: result.atsAfter,
@@ -220,10 +223,9 @@ export default function OptimizePage() {
         pdfUrl: result.pdfUrl,
         pdfExpiresAt: result.pdfExpiresAt,
         runId: result.runId,
-        creditsUsed: result.creditsUsed,
-        creditsRemaining: result.creditsRemaining,
-        // Add required fields for OptimizeResultsLayout
-        rewrittenResume: resume, // Use original since UseResume returns PDF
+        creditsUsed: result.creditsUsed ?? 0,
+        creditsRemaining: result.creditsRemaining ?? null,
+        rewrittenResume: rewrittenText,
         target_role: jobDesc.split('\n')[0] || 'Position',
         target_company: 'Company',
         candidate_email: '',
@@ -257,7 +259,6 @@ export default function OptimizePage() {
       }
 
       toast('Resume optimized successfully! 🎉', 'success')
-      toast(`PDF link expires in 24 hours — download now!`, 'info')
 
       // Save to history (only if authenticated)
       if (user && !isTestMode) {
@@ -269,7 +270,7 @@ export default function OptimizePage() {
           optimizedScore: result.atsAfter,
           scoreLift: result.atsAfter - result.atsBefore,
           originalResume: resume,
-          optimizedResume: resume, // UseResume generates PDF, not text
+          optimizedResume: rewrittenText,
           keywordsAdded: result.addedKeywords,
           keywordsMissing: result.missingKeywords,
           jobDescription: jobDesc,
@@ -306,8 +307,15 @@ export default function OptimizePage() {
         'professional'
       )
 
-      setCoverLetterPdfUrl(result.pdfUrl)
-      toast('Cover letter generated! 📄', 'success')
+      if (result.coverLetterText?.trim()) {
+        await navigator.clipboard.writeText(result.coverLetterText)
+        toast('Cover letter copied to clipboard! 📄', 'success')
+      } else if (result.pdfUrl) {
+        setCoverLetterPdfUrl(result.pdfUrl)
+        toast('Cover letter generated! 📄', 'success')
+      } else {
+        toast('Cover letter generated but no text returned', 'info')
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to generate cover letter'
       toast(msg, 'error')
@@ -357,10 +365,10 @@ export default function OptimizePage() {
                 transition={{ delay: 0.1 }}
                 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-3 md:mb-4 px-4"
               >
-                World-Class ATS Resume
+                AI-Powered ATS Resume Builder
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-                  Optimization Engine
+                  Built for Modern Job Seekers
                 </span>
               </motion.h1>
 
