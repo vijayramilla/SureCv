@@ -4,23 +4,40 @@ import fetch from 'node-fetch'
 import multer from 'multer'
 import { loadEnvFile } from './loadEnv.mjs'
 
-// Load environment variables from .env file
+// Load environment variables from .env file (local development only)
 loadEnvFile()
 
 const app = express()
 const PORT = process.env.PORT || 3001
 const USERESUME_KEY = process.env.USERESUME_API_KEY
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 const USERESUME_BASE = 'https://useresume.ai/api/v3'
+
+// Log startup info
+console.log('[SureCv Server] Starting up...')
+console.log('[SureCv Server] PORT:', PORT)
+console.log('[SureCv Server] FRONTEND_URL:', FRONTEND_URL)
+console.log('[SureCv Server] USERESUME_KEY:', USERESUME_KEY ? 'SET' : 'MISSING ⚠️')
+console.log('[SureCv Server] NODE_ENV:', process.env.NODE_ENV || 'development')
 const upload = multer({ storage: multer.memoryStorage() })
 
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://surecv.in',
-    'https://www.surecv.in',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://surecv.in',
+      'https://www.surecv.in',
+      FRONTEND_URL,
+    ].filter(Boolean)
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      console.log('[CORS] Rejected origin:', origin)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -321,8 +338,22 @@ function calculateATSScore(resumeText, jobDescription) {
 }
 
 // ─── HEALTH CHECK ─────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    service: 'SureCv API v2',
+    message: 'Server is running',
+    useResumeAPI: USERESUME_KEY ? 'Connected' : 'NOT CONFIGURED'
+  })
+})
+
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'SureCv API v2' })
+  res.json({ 
+    status: 'ok', 
+    service: 'SureCv API v2',
+    timestamp: new Date().toISOString(),
+    useResumeAPI: USERESUME_KEY ? 'Connected' : 'NOT CONFIGURED'
+  })
 })
 
 // ═══════════════════════════════════════════════════════
@@ -777,6 +808,17 @@ function generateTips(parsed, jd) {
 }
 
 app.listen(PORT, () => {
-  console.log(`✅ SureCv API running on port ${PORT}`)
-  console.log(`🔑 UseResume API: ${USERESUME_KEY ? 'Connected' : 'MISSING KEY!'}`)
+  console.log('\n════════════════════════════════════════════════')
+  console.log('✅ SureCv API Server Started Successfully')
+  console.log('════════════════════════════════════════════════')
+  console.log(`📍 Port: ${PORT}`)
+  console.log(`🌐 Frontend URL: ${FRONTEND_URL}`)
+  console.log(`🔑 UseResume API: ${USERESUME_KEY ? '✓ Connected' : '✗ MISSING - SET USERESUME_API_KEY'}`)
+  console.log(`📧 Endpoints available:`)
+  console.log(`   GET  / — Status check`)
+  console.log(`   GET  /health — Health check`)
+  console.log(`   POST /api/optimize — Optimize resume`)
+  console.log(`   POST /api/cover-letter — Generate cover letter`)
+  console.log(`   POST /api/parse-resume — Parse PDF resume`)
+  console.log('════════════════════════════════════════════════\n')
 })
