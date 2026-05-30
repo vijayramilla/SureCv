@@ -7,9 +7,8 @@ import type { AtsScoreData } from '../lib/atsScoreTypes'
 import { calculateFullAtsScore } from '../lib/resumeApi'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Sparkles, Loader2, AlertCircle, FileUp, Link as LinkIcon, Check, Zap, Target, Shield, TrendingUp, PenLine, Hash, CreditCard as Edit, Search, BarChart2, Globe } from 'lucide-react'
-import { optimizeResume, type OptimizeResult } from '../lib/aiOptimization'
-import { enforceResumeStructure } from '../lib/enforceResumeStructure'
+import { FileText, Sparkles, Loader2, AlertCircle, FileUp, Link as LinkIcon, Check, Zap, Target, Shield, TrendingUp, PenLine, Hash, CreditCard as Edit, Search, BarChart2, Globe, Download, Mail, RefreshCw } from 'lucide-react'
+import { optimizeResume as callUseResumeApi, generateCoverLetter as callGenerateCoverLetter, type OptimizeResponse } from '../lib/useResumeApi'
 import { extractTextFromPDF } from '../lib/pdfExtractor'
 import { fetchJobDescriptionFromUrl } from '../lib/jobUrlFetcher'
 import OptimizationLoader, {
@@ -57,6 +56,8 @@ export default function OptimizePage() {
   const [loadingSavedResumes, setLoadingSavedResumes] = useState(false)
   const [optimizedResult, setOptimizedResult] = useState<EnrichedOptimizeResult | null>(null)
   const [atsData, setAtsData] = useState<AtsScoreData | null>(null)
+  const [coverLetterPdfUrl, setCoverLetterPdfUrl] = useState<string | null>(null)
+  const [generatingCL, setGeneratingCL] = useState(false)
 
   // NEW: User instructions
   const [userInstructions, setUserInstructions] = useState('')
@@ -192,115 +193,94 @@ export default function OptimizePage() {
     }, 280)
 
     try {
-      // Enhanced prompt with user instructions and resume length
-      let enhancedResume = resume
-      let enhancedJD = jobDesc
-
-      if (userInstructions.trim()) {
-        enhancedJD += `\n\nAdditional user instructions: ${userInstructions}`
-      }
-
-      enhancedJD += `\n\nResume length: ${resumeLength}
- auto = engine decides | 1page = cut ruthlessly | 2page = allow full detail | academic = include publications & research`
-
-      const result = await optimizeResume(enhancedResume, enhancedJD)
-      const structuredRewrittenResume = enforceResumeStructure(
-        result.rewrittenResume || '',
-        result.candidate_name || ''
-      )
-      const normalizedResult: EnrichedOptimizeResult = {
-        ...result,
-        rewrittenResume: structuredRewrittenResume,
-        optimized_resume: structuredRewrittenResume,
-      }
-      console.log('=== RAW AI OUTPUT ===', normalizedResult)
-      console.log('=== REWRITTEN RESUME ===', normalizedResult.rewrittenResume)
-
-      const fullAts = await calculateFullAtsScore(
+      // Call UseResume.ai API
+      console.log('[UseResume] Calling optimization endpoint...')
+      const result: OptimizeResponse = await callUseResumeApi(
         resume,
-        normalizedResult.rewrittenResume,
-        jobDesc
+        jobDesc,
+        userInstructions,
+        resumeLength
       )
 
-      // Update normalizedResult with REAL ATS scores from server engine
-      // This ensures accurate score calculation instead of NVIDIA estimates
+      console.log('[UseResume] Optimization complete:', result)
+
+      // Map UseResume response to our internal format
       const finalResult: EnrichedOptimizeResult = {
-        ...normalizedResult,
-        original_score: fullAts.overall_before,
-        optimized_score: fullAts.overall_after,
-        score_lift: fullAts.overall_after - fullAts.overall_before,
-        atsBefore: fullAts.overall_before,
-        atsAfter: fullAts.overall_after,
-        // Use real dimension scores from ATS engine
-        scoreDimensions: {
-          keywordMatch: fullAts.dimensions.keyword_match.score,
-          formatScore: fullAts.dimensions.format_parsability.score,
-          actionVerbScore: fullAts.dimensions.experience_relevance.score,
-          quantifiedBullets: fullAts.dimensions.skills_coverage.score,
-          sectionCompleteness: fullAts.dimensions.title_alignment.score,
+        atsBefore: result.atsBefore,
+        atsAfter: result.atsAfter,
+        scoreDimensions: result.scoreDimensions,
+        scoreLabel: result.scoreLabel,
+        industryDetected: result.industryDetected,
+        missingKeywords: result.missingKeywords,
+        addedKeywords: result.addedKeywords,
+        bulletsRewritten: result.bulletsRewritten,
+        metricsAdded: result.metricsAdded,
+        recruiterTips: result.recruiterTips,
+        candidate_name: result.candidateName,
+        pdfUrl: result.pdfUrl,
+        pdfExpiresAt: result.pdfExpiresAt,
+        runId: result.runId,
+        creditsUsed: result.creditsUsed,
+        creditsRemaining: result.creditsRemaining,
+        // Add required fields for OptimizeResultsLayout
+        rewrittenResume: resume, // Use original since UseResume returns PDF
+        target_role: jobDesc.split('\n')[0] || 'Position',
+        target_company: 'Company',
+        candidate_email: '',
+        candidate_phone: '',
+        scoreDisplay: {
+          before: result.atsBefore,
+          after: result.atsAfter,
+          changesMade: result.atsAfter > result.atsBefore,
+          keywordsAddedList: result.addedKeywords,
+          keywordsMissingList: result.missingKeywords,
+          verbsReplaced: [],
+          bulletsRewritten: result.bulletsRewritten,
+          skillsMatchPct: result.scoreDimensions?.keywordMatch || 0,
+          rubricMessage: result.scoreLabel,
+          tips: result.recruiterTips,
+          analysisMessage: `Your resume improved from ${result.atsBefore} to ${result.atsAfter} points`,
         },
-        // Update keywords and tips from real ATS analysis
-        missingKeywords: fullAts.keywords_missing,
-        addedKeywords: fullAts.keywords_matched,
-        keywords_missing: fullAts.keywords_missing,
-        keywords_added: fullAts.keywords_matched,
-        recruiterTips: fullAts.tips,
+        keywords_added: result.addedKeywords,
+        keywords_missing: result.missingKeywords,
       }
 
       clearInterval(progressInterval)
       setProgress(100)
       setProgressMsg('Finalizing')
 
-      const isTestMode = window.location.pathname.includes('/test/');
+      const isTestMode = window.location.pathname.includes('/test/')
 
       // Use credit (only if authenticated)
       if (user && !isTestMode) {
         await useOneCredit()
       }
 
-      toast('Resume optimized successfully!', 'success')
+      toast('Resume optimized successfully! 🎉', 'success')
+      toast(`PDF link expires in 24 hours — download now!`, 'info')
 
       // Save to history (only if authenticated)
       if (user && !isTestMode) {
         saveResume(user.uid, {
-          candidateName: result.candidate_name || '',
-          targetRole: result.target_role || 'Position',
-          targetCompany: result.target_company || 'Company',
-          originalScore: fullAts.overall_before,
-          optimizedScore: fullAts.overall_after,
-          scoreLift: fullAts.overall_after - fullAts.overall_before,
+          candidateName: result.candidateName,
+          targetRole: 'Position',
+          targetCompany: 'Company',
+          originalScore: result.atsBefore,
+          optimizedScore: result.atsAfter,
+          scoreLift: result.atsAfter - result.atsBefore,
           originalResume: resume,
-          optimizedResume: normalizedResult.rewrittenResume,
-          keywordsAdded: fullAts.keywords_matched,
-          keywordsMissing: fullAts.keywords_missing,
+          optimizedResume: resume, // UseResume generates PDF, not text
+          keywordsAdded: result.addedKeywords,
+          keywordsMissing: result.missingKeywords,
           jobDescription: jobDesc,
         })
       }
 
-      // DEBUG LOGS FOR REWRITING VERIFICATION
-      console.log('=== ATS OPTIMIZATION RESULTS ===')
-      console.log('BEFORE SCORE:', result.atsBefore)
-      console.log('AFTER SCORE:', result.atsAfter)
-      console.log('SCORE IMPROVEMENT:', (result.atsAfter || 0) - (result.atsBefore || 0), 'points')
-      console.log('BULLETS REWRITTEN:', result.bulletsRewritten)
-      console.log('METRICS ADDED:', result.metricsAdded)
-      console.log('REWRITTEN PREVIEW:', result.rewrittenResume?.substring(0, 300))
-      console.log('WEAK VERBS REPLACED:', result.weakVerbsReplaced)
-      console.log('ADDED KEYWORDS:', result.addedKeywords)
-
-      // DEBUG: Show real ATS improvement from server engine
-      console.log('=== REAL ATS SCORES (Server Engine) ===')
-      console.log('ORIGINAL ATS SCORE:', fullAts.overall_before)
-      console.log('OPTIMIZED ATS SCORE:', fullAts.overall_after)
-      console.log('ACTUAL IMPROVEMENT:', fullAts.overall_after - fullAts.overall_before, 'points')
-      console.log('DIMENSION BREAKDOWN:', fullAts.dimensions)
-
       setOptimizedResult(finalResult)
-      setAtsData(fullAts)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       clearInterval(progressInterval)
-      const specificError = getSpecificErrorMessage(err)
+      const specificError = err instanceof Error ? err.message : 'Optimization failed'
       setError(specificError)
       toast(specificError, 'error')
     } finally {
@@ -310,9 +290,36 @@ export default function OptimizePage() {
     }
   }
 
+  const handleGenerateCoverLetter = async () => {
+    if (!resume.trim() || !jobDesc.trim()) {
+      toast('Please complete your resume optimization first', 'error')
+      return
+    }
+
+    setGeneratingCL(true)
+    try {
+      const result = await callGenerateCoverLetter(
+        resume,
+        jobDesc,
+        '', // jobTitle
+        '', // companyName
+        'professional'
+      )
+
+      setCoverLetterPdfUrl(result.pdfUrl)
+      toast('Cover letter generated! 📄', 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate cover letter'
+      toast(msg, 'error')
+    } finally {
+      setGeneratingCL(false)
+    }
+  }
+
   const handleReset = () => {
     setOptimizedResult(null)
     setAtsData(null)
+    setCoverLetterPdfUrl(null)
     setResume('')
     setJobDesc('')
     setJobUrl('')

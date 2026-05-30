@@ -37,6 +37,16 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
 
+            {/* Test routes (no auth required) */}
+            <Route
+              path="/test/optimize"
+              element={
+                <DashboardLayout>
+                  <OptimizePage />
+                </DashboardLayout>
+              }
+            />
+
             {/* Protected dashboard routes */}
             <Route
               path="/optimize"

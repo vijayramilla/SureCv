@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node server/index.js",
     "server": "node server/scraper.mjs",
-    "dev:full": "concurrently -n vite,api -c cyan,magenta \"npm run dev\" \"npm run server\"",
+    "dev:full": "concurrently -n vite,api -c cyan,magenta \"npm run dev\" \"npm run dev:server\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

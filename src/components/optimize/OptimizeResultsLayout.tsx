@@ -104,6 +104,25 @@ export default function OptimizeResultsLayout({
   }
 
   const handleDownloadPDF = async () => {
+    // If we have a pdfUrl from UseResume API, download directly
+    if (result.pdfUrl) {
+      try {
+        const link = document.createElement('a')
+        link.href = result.pdfUrl
+        link.download = `${candidateName}-Optimized-Resume.pdf`
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        toast('Resume PDF downloaded!', 'success')
+      } catch {
+        toast('PDF download failed', 'error')
+      }
+      return
+    }
+
+    // Fallback to old method
     setGeneratingPdf(true)
     try {
       await downloadPremiumResumePdf({
@@ -284,6 +303,13 @@ export default function OptimizeResultsLayout({
                 companyName={companyName}
                 candidateName={candidateName}
               />
+            )}
+
+            {/* PDF Expiry Warning */}
+            {result.pdfExpiresAt && (
+              <p className="text-[10px] text-yellow-400/80 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-center">
+                ⚠️ PDF link expires in 24 hours — download now!
+              </p>
             )}
           </div>
         </div>
