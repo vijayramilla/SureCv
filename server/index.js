@@ -2,14 +2,30 @@ import express from 'express'
 import cors from 'cors'
 import fetch from 'node-fetch'
 import multer from 'multer'
-import { loadEnvFile } from './loadEnv.mjs'
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-// Load environment variables from .env file (local development only)
+// Load local .env file if it exists (development only)
 try {
-  loadEnvFile()
-  console.log('[SureCv] Local .env file loaded (if exists)')
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  const envPath = resolve(__dirname, '..', '.env')
+  
+  if (existsSync(envPath)) {
+    const content = readFileSync(envPath, 'utf8')
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const i = trimmed.indexOf('=')
+      if (i === -1) continue
+      const key = trimmed.slice(0, i).trim()
+      const val = trimmed.slice(i + 1).trim()
+      if (!process.env[key]) process.env[key] = val
+    }
+    console.log('[SureCv] Loaded local .env file')
+  }
 } catch (e) {
-  console.log('[SureCv] No local .env file - using Railway environment variables')
+  console.log('[SureCv] No local .env found - using Railway environment')
 }
 
 const app = express()
@@ -18,12 +34,11 @@ const USERESUME_KEY = process.env.USERESUME_API_KEY
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 const USERESUME_BASE = 'https://useresume.ai/api/v3'
 
-// Log startup info
-console.log('[SureCv Server] Starting up...')
-console.log('[SureCv Server] PORT:', PORT)
-console.log('[SureCv Server] FRONTEND_URL:', FRONTEND_URL)
-console.log('[SureCv Server] USERESUME_KEY:', USERESUME_KEY ? 'SET' : 'MISSING ⚠️')
-console.log('[SureCv Server] NODE_ENV:', process.env.NODE_ENV || 'development')
+console.log('[SureCv] Server Configuration:')
+console.log('  PORT:', PORT)
+console.log('  FRONTEND_URL:', FRONTEND_URL)
+console.log('  USERESUME_KEY:', USERESUME_KEY ? '✓ SET' : '✗ MISSING')
+console.log('  NODE_ENV:', process.env.NODE_ENV || 'development')
 const upload = multer({ storage: multer.memoryStorage() })
 
 app.use(cors({
