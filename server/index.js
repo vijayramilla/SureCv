@@ -828,7 +828,7 @@ function generateTips(parsed, jd) {
   return tips.slice(0, 3)
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('\n════════════════════════════════════════════════')
   console.log('✅ SureCv API Server Started Successfully')
   console.log('════════════════════════════════════════════════')
