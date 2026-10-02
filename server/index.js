@@ -197,7 +197,7 @@ Return ONLY valid JSON. No markdown. No backticks.`
           Authorization: `Bearer ${NVIDIA_KEY}`,
         },
         body: JSON.stringify({
-          model: 'meta/llama-3.3-70b-instruct',
+          model: process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
@@ -286,7 +286,7 @@ app.post('/api/cover-letter', async (req, res) => {
           Authorization: `Bearer ${NVIDIA_KEY}`,
         },
         body: JSON.stringify({
-          model: 'meta/llama-3.3-70b-instruct',
+          model: process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct',
           messages: [
             {
               role: 'system',
